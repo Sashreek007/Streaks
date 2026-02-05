@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Send, MoreVertical, Phone, Video } from 'lucide-react';
-import { Friend, Message, mockDMs, mockCurrentUser } from '../../data/mockSocial';
+import type { Friend, Message } from '../../data/mockSocial';
+import { mockDMs, mockCurrentUser } from '../../data/mockSocial';
 
 interface DMWindowProps {
     friend: Friend;
@@ -64,8 +65,8 @@ export default function DMWindow({ friend }: DMWindowProps) {
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe
-                                    ? 'bg-primary text-primary-foreground rounded-br-none'
-                                    : 'bg-secondary text-secondary-foreground rounded-bl-none'
+                                ? 'bg-primary text-primary-foreground rounded-br-none'
+                                : 'bg-secondary text-secondary-foreground rounded-bl-none'
                                 }`}>
                                 <p className="text-sm">{msg.content}</p>
                                 <p className={`text-[10px] mt-1 ${isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>

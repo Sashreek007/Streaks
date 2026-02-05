@@ -1,6 +1,7 @@
 
-import { MessageSquare, MoreVertical, UserPlus, Circle } from 'lucide-react';
-import { Friend, mockFriends } from '../../data/mockSocial';
+import { MessageSquare, UserPlus } from 'lucide-react';
+import type { Friend } from '../../data/mockSocial';
+import { mockFriends } from '../../data/mockSocial';
 
 interface FriendListProps {
     onSelectFriend: (friend: Friend) => void;
@@ -23,8 +24,8 @@ export default function FriendList({ onSelectFriend, selectedFriendId }: FriendL
                         key={friend.id}
                         onClick={() => onSelectFriend(friend)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedFriendId === friend.id
-                                ? 'bg-secondary text-secondary-foreground'
-                                : 'hover:bg-accent/50 text-foreground'
+                            ? 'bg-secondary text-secondary-foreground'
+                            : 'hover:bg-accent/50 text-foreground'
                             }`}
                     >
                         <div className="relative">
@@ -32,7 +33,7 @@ export default function FriendList({ onSelectFriend, selectedFriendId }: FriendL
                                 {friend.avatar}
                             </div>
                             <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${friend.status === 'online' ? 'bg-green-500' :
-                                    friend.status === 'busy' ? 'bg-red-500' : 'bg-gray-500'
+                                friend.status === 'busy' ? 'bg-red-500' : 'bg-gray-500'
                                 }`} />
                         </div>
 
