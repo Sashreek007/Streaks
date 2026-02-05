@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, RequireAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
@@ -14,57 +15,75 @@ import AppLayout from './components/AppLayout';
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Auth routes */}
-          <Route path="/" element={<LoginPage />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Auth routes */}
+            <Route path="/" element={<LoginPage />} />
 
-          {/* Protected routes with layout */}
-          <Route path="/dashboard" element={
-            <AppLayout>
-              <DashboardPage />
-            </AppLayout>
-          } />
-          <Route path="/tasks" element={
-            <AppLayout>
-              <TasksPage />
-            </AppLayout>
-          } />
-          <Route path="/social" element={
-            <AppLayout>
-              <SocialFeedPage />
-            </AppLayout>
-          } />
-          <Route path="/communities" element={
-            <AppLayout>
-              <CommunitiesPage />
-            </AppLayout>
-          } />
-          <Route path="/leaderboard" element={
-            <AppLayout>
-              <LeaderboardPage />
-            </AppLayout>
-          } />
-          <Route path="/friends" element={
-            <AppLayout>
-              <FriendsPage />
-            </AppLayout>
-          } />
-          <Route path="/profile" element={
-            <AppLayout>
-              <ProfilePage />
-            </AppLayout>
-          } />
-          <Route path="/settings" element={
-            <AppLayout>
-              <SettingsPage />
-            </AppLayout>
-          } />
+            {/* Protected routes with layout */}
+            <Route path="/dashboard" element={
+              <RequireAuth>
+                <AppLayout>
+                  <DashboardPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/tasks" element={
+              <RequireAuth>
+                <AppLayout>
+                  <TasksPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/social" element={
+              <RequireAuth>
+                <AppLayout>
+                  <SocialFeedPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/communities" element={
+              <RequireAuth>
+                <AppLayout>
+                  <CommunitiesPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/leaderboard" element={
+              <RequireAuth>
+                <AppLayout>
+                  <LeaderboardPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/friends" element={
+              <RequireAuth>
+                <AppLayout>
+                  <FriendsPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/profile" element={
+              <RequireAuth>
+                <AppLayout>
+                  <ProfilePage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/settings" element={
+              <RequireAuth>
+                <AppLayout>
+                  <SettingsPage />
+                </AppLayout>
+              </RequireAuth>
+            } />
 
-          {/* Redirect unknown routes to dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Redirect unknown routes to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
