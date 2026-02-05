@@ -76,7 +76,7 @@ router.get('/conversations', authenticate, async (req: AuthenticatedRequest, res
 // GET /api/messages/:conversationId - Get messages in conversation
 router.get('/:conversationId', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { conversationId } = req.params;
+    const conversationId = req.params.conversationId as string;
     const userId = req.user!.id;
     const limit = parseInt(req.query.limit as string) || 50;
     const cursor = req.query.cursor as string;
@@ -144,7 +144,7 @@ router.post(
   validate(sendMessageSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { friendId } = req.params;
+      const friendId = req.params.friendId as string;
       const { content, imageUrl } = req.body;
       const userId = req.user!.id;
 
@@ -244,7 +244,7 @@ router.post(
 // POST /api/messages/:conversationId/read - Mark conversation as read
 router.post('/:conversationId/read', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { conversationId } = req.params;
+    const conversationId = req.params.conversationId as string;
     const userId = req.user!.id;
 
     await prisma.conversationParticipant.update({

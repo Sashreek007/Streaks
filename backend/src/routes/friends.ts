@@ -120,7 +120,7 @@ router.get('/requests', authenticate, async (req: AuthenticatedRequest, res, nex
 // POST /api/friends/request/:userId - Send friend request
 router.post('/request/:userId', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { userId: targetUserId } = req.params;
+    const targetUserId = req.params.userId as string;
     const requesterId = req.user!.id;
 
     if (targetUserId === requesterId) {
@@ -194,7 +194,7 @@ router.post('/request/:userId', authenticate, async (req: AuthenticatedRequest, 
 // POST /api/friends/accept/:requestId - Accept friend request
 router.post('/accept/:requestId', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { requestId } = req.params;
+    const requestId = req.params.requestId as string;
     const userId = req.user!.id;
 
     const friendship = await prisma.friendship.findFirst({
@@ -240,7 +240,7 @@ router.post('/accept/:requestId', authenticate, async (req: AuthenticatedRequest
 // POST /api/friends/reject/:requestId - Reject friend request
 router.post('/reject/:requestId', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { requestId } = req.params;
+    const requestId = req.params.requestId as string;
     const userId = req.user!.id;
 
     const friendship = await prisma.friendship.findFirst({
@@ -270,7 +270,7 @@ router.post('/reject/:requestId', authenticate, async (req: AuthenticatedRequest
 // DELETE /api/friends/:friendshipId - Remove friend
 router.delete('/:friendshipId', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { friendshipId } = req.params;
+    const friendshipId = req.params.friendshipId as string;
     const userId = req.user!.id;
 
     const friendship = await prisma.friendship.findFirst({

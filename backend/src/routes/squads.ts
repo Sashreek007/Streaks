@@ -96,7 +96,7 @@ router.post(
 // GET /api/squads/:id - Get squad details
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user!.id;
 
     const squad = await prisma.squad.findUnique({
@@ -147,7 +147,7 @@ router.patch(
   validate(updateSquadSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const userId = req.user!.id;
 
       // Check permission
@@ -179,7 +179,7 @@ router.post(
   validate(aiSettingsSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const userId = req.user!.id;
       const { provider, apiKey, model, verificationPrompt, confidenceThreshold } = req.body;
 
@@ -231,7 +231,7 @@ router.post(
 // POST /api/squads/join/:code - Join squad by invite code
 router.post('/join/:code', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { code } = req.params;
+    const code = req.params.code as string;
     const userId = req.user!.id;
 
     const squad = await prisma.squad.findUnique({
@@ -273,7 +273,7 @@ router.post('/join/:code', authenticate, async (req: AuthenticatedRequest, res, 
 // DELETE /api/squads/:id/leave - Leave squad
 router.delete('/:id/leave', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user!.id;
 
     const membership = await prisma.squadMember.findUnique({
@@ -308,7 +308,7 @@ router.delete('/:id/leave', authenticate, async (req: AuthenticatedRequest, res,
 // POST /api/squads/:id/regenerate-invite - Regenerate invite code
 router.post('/:id/regenerate-invite', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user!.id;
 
     const membership = await prisma.squadMember.findUnique({

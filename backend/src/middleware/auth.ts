@@ -102,6 +102,6 @@ export function generateToken(user: { id: string; email: string; username: strin
       username: user.username,
     },
     env.jwtSecret,
-    { expiresIn: env.jwtExpiresIn }
+    { expiresIn: env.jwtExpiresIn as jwt.SignOptions['expiresIn'] }
   );
 }
