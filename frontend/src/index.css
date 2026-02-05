@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,50 +6,84 @@
 
 @layer base {
   :root {
-    /* Light mode */
+    /* Light mode - Dopamine-inducing palette */
     --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
+    --foreground: 240 10% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 240 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 239 84% 67%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Primary: Vibrant Teal-Green (Growth, Progress, Success) */
+    --primary: 162 84% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
+
+    /* Secondary: Warm surfaces */
+    --secondary: 35 100% 97%;
+    --secondary-foreground: 240 10% 10%;
+
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 71% 4%;
+    --accent: 35 100% 97%;
+    --accent-foreground: 240 10% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 239 84% 67%;
-    --radius: 0.5rem;
+    --ring: 162 84% 45%;
+    --radius: 0.75rem;
+
+    /* Custom dopamine colors */
+    --streak: 24 95% 53%;
+    --streak-foreground: 0 0% 100%;
+    --achievement: 45 93% 47%;
+    --achievement-foreground: 0 0% 10%;
+    --energy: 340 82% 52%;
+    --energy-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --xp: 280 87% 60%;
+    --xp-foreground: 0 0% 100%;
   }
 
   .dark {
-    /* Dark mode (default) */
-    --background: 240 10% 4%;
+    /* Dark mode - Dopamine-inducing palette */
+    --background: 240 10% 6%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
+    --card: 240 10% 9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
+    --popover: 240 10% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 239 84% 67%;
+
+    /* Primary: Vibrant Teal-Green (Growth, Progress, Success) - Duolingo inspired */
+    --primary: 162 84% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 6% 10%;
+
+    /* Secondary: Warm dark surfaces */
+    --secondary: 240 6% 12%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 6% 10%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 6% 10%;
+
+    --muted: 240 6% 15%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 240 6% 15%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 30%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 15%;
-    --input: 240 6% 15%;
-    --ring: 239 84% 67%;
+    --border: 240 6% 18%;
+    --input: 240 6% 18%;
+    --ring: 162 84% 50%;
+
+    /* Custom dopamine colors - Vibrant for dark mode */
+    --streak: 24 100% 55%;
+    --streak-foreground: 0 0% 100%;
+    --achievement: 45 100% 51%;
+    --achievement-foreground: 0 0% 10%;
+    --energy: 340 90% 60%;
+    --energy-foreground: 0 0% 100%;
+    --success: 142 76% 50%;
+    --success-foreground: 0 0% 100%;
+    --xp: 280 90% 65%;
+    --xp-foreground: 0 0% 100%;
   }
 }
 
@@ -69,15 +103,63 @@
   }
 }
 
+/* Dopamine color utilities */
+@layer utilities {
+  .text-streak {
+    color: hsl(var(--streak));
+  }
+  .bg-streak {
+    background-color: hsl(var(--streak));
+  }
+  .text-achievement {
+    color: hsl(var(--achievement));
+  }
+  .bg-achievement {
+    background-color: hsl(var(--achievement));
+  }
+  .text-energy {
+    color: hsl(var(--energy));
+  }
+  .bg-energy {
+    background-color: hsl(var(--energy));
+  }
+  .text-success {
+    color: hsl(var(--success));
+  }
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  .text-xp {
+    color: hsl(var(--xp));
+  }
+  .bg-xp {
+    background-color: hsl(var(--xp));
+  }
 
+  /* Gradient backgrounds for achievements */
+  .bg-gradient-streak {
+    background: linear-gradient(135deg, hsl(var(--streak)) 0%, hsl(24 100% 65%) 100%);
+  }
+  .bg-gradient-achievement {
+    background: linear-gradient(135deg, hsl(var(--achievement)) 0%, hsl(35 100% 60%) 100%);
+  }
+  .bg-gradient-xp {
+    background: linear-gradient(135deg, hsl(var(--xp)) 0%, hsl(300 90% 65%) 100%);
+  }
+  .bg-gradient-energy {
+    background: linear-gradient(135deg, hsl(var(--energy)) 0%, hsl(var(--streak)) 100%);
+  }
+  .bg-gradient-success {
+    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--primary)) 100%);
+  }
+}
+
+/* Animations */
 @keyframes breathe {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
     filter: brightness(1);
   }
-
   50% {
     transform: scale(1.02);
     filter: brightness(1.1);
@@ -85,14 +167,69 @@
 }
 
 @keyframes float {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0);
   }
-
   50% {
     transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--streak) / 0.5), 0 0 20px hsl(var(--streak) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px hsl(var(--streak) / 0.8), 0 0 40px hsl(var(--streak) / 0.5);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes celebrate {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(-3deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(3deg);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes streak-fire {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1) translateY(-2px);
+    filter: brightness(1.2);
   }
 }
 
@@ -102,6 +239,28 @@
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-celebrate {
+  animation: celebrate 0.5s ease-in-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-streak-fire {
+  animation: streak-fire 1.5s ease-in-out infinite;
 }
 
 /* Glassmorphism utilities */
@@ -119,6 +278,19 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
+/* Streak card glow effect */
+.streak-glow {
+  box-shadow: 0 0 30px hsl(var(--streak) / 0.3), 0 0 60px hsl(var(--streak) / 0.15);
+}
+
+.achievement-glow {
+  box-shadow: 0 0 30px hsl(var(--achievement) / 0.4), 0 0 60px hsl(var(--achievement) / 0.2);
+}
+
+.xp-glow {
+  box-shadow: 0 0 30px hsl(var(--xp) / 0.3), 0 0 60px hsl(var(--xp) / 0.15);
+}
+
 /* Custom scrollbar for dark mode */
 .dark ::-webkit-scrollbar {
   width: 8px;
@@ -126,7 +298,7 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: hsl(240 10% 6%);
+  background: hsl(240 10% 8%);
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -135,7 +307,7 @@
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(240 6% 30%);
+  background: hsl(var(--primary) / 0.5);
 }
 
 /* Animation utilities */
@@ -143,7 +315,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -154,7 +325,6 @@
     transform: translateY(10px);
     opacity: 0;
   }
-
   to {
     transform: translateY(0);
     opacity: 1;
@@ -167,4 +337,28 @@
 
 .animate-slideUp {
   animation: slideUp 0.3s ease-out;
+}
+
+/* Progress bar styles */
+.progress-bar {
+  @apply h-2 rounded-full overflow-hidden bg-muted;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--success)));
+}
+
+/* Achievement badge styles */
+.badge-earned {
+  @apply relative overflow-hidden;
+}
+
+.badge-earned::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite;
 }
