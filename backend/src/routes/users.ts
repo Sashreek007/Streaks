@@ -37,29 +37,13 @@ const updateSettingsSchema = z.object({
 // GET /api/users/:id - Get user profile
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const isOwnProfile = id === req.user!.id;
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        username: true,
-        displayName: true,
-        avatarUrl: true,
-        bio: true,
-        level: true,
-        totalXp: true,
-        currentStreak: true,
-        longestStreak: true,
-        createdAt: true,
-        settings: {
-          select: {
-            profilePublic: true,
-            showStreak: true,
-            showScore: true,
-          },
-        },
+      include: {
+        settings: true,
         _count: {
           select: {
             tasks: true,
@@ -116,16 +100,18 @@ router.patch(
       const user = await prisma.user.update({
         where: { id: req.user!.id },
         data: req.body,
-        select: {
-          id: true,
-          username: true,
-          displayName: true,
-          avatarUrl: true,
-          bio: true,
-        },
       });
 
-      res.json({ success: true, data: user });
+      res.json({
+        success: true,
+        data: {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          bio: user.bio,
+        }
+      });
     } catch (error) {
       next(error);
     }
@@ -180,7 +166,7 @@ router.patch(
 // GET /api/users/:id/achievements - Get user achievements
 router.get('/:id/achievements', authenticate, async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const achievements = await prisma.userAchievement.findMany({
       where: { userId: id },
@@ -205,7 +191,7 @@ router.get('/:id/achievements', authenticate, async (req, res, next) => {
 // GET /api/users/:id/activity - Get user activity
 router.get('/:id/activity', authenticate, async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const limit = parseInt(req.query.limit as string) || 20;
 
     const completions = await prisma.taskCompletion.findMany({
@@ -214,9 +200,7 @@ router.get('/:id/activity', authenticate, async (req, res, next) => {
         verificationStatus: 'verified',
       },
       include: {
-        task: {
-          select: { title: true, category: true },
-        },
+        task: true,
       },
       orderBy: { completedAt: 'desc' },
       take: limit,

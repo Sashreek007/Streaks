@@ -42,7 +42,10 @@ const difficultyXp: Record<string, number> = {
 // GET /api/tasks - Get user's tasks
 router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { category, frequency, visibility, active } = req.query;
+    const category = req.query.category as string | undefined;
+    const frequency = req.query.frequency as string | undefined;
+    const visibility = req.query.visibility as string | undefined;
+    const active = req.query.active as string | undefined;
 
     const where: any = { userId: req.user!.id };
 
@@ -54,9 +57,9 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
     const tasks = await prisma.task.findMany({
       where,
       include: {
-        squad: { select: { id: true, name: true } },
-        community: { select: { id: true, name: true } },
-        challenge: { select: { id: true, title: true } },
+        squad: true,
+        community: true,
+        challenge: true,
         _count: { select: { completions: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -86,8 +89,8 @@ router.post(
           dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         },
         include: {
-          squad: { select: { id: true, name: true } },
-          community: { select: { id: true, name: true } },
+          squad: true,
+          community: true,
         },
       });
 
@@ -101,7 +104,7 @@ router.post(
 // GET /api/tasks/:id - Get single task
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const task = await prisma.task.findFirst({
       where: {
@@ -124,8 +127,8 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
         ],
       },
       include: {
-        squad: { select: { id: true, name: true } },
-        community: { select: { id: true, name: true } },
+        squad: true,
+        community: true,
         completions: {
           orderBy: { completedAt: 'desc' },
           take: 10,
@@ -151,7 +154,7 @@ router.patch(
   validate(updateTaskSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       // Check ownership
       const existing = await prisma.task.findFirst({
@@ -186,7 +189,7 @@ router.patch(
 // DELETE /api/tasks/:id - Delete task
 router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const task = await prisma.task.findFirst({
       where: { id, userId: req.user!.id },
@@ -212,14 +215,14 @@ router.post(
   validate(completeTaskSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { proofUrl, proofType } = req.body;
 
       // Get task
       const task = await prisma.task.findFirst({
         where: { id, userId: req.user!.id, isActive: true },
         include: {
-          community: { select: { xpMultiplier: true } },
+          community: true,
         },
       });
 
