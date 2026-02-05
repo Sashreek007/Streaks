@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Send, MoreVertical, Phone, Video } from 'lucide-react';
+import { Send, MoreVertical } from 'lucide-react';
 import type { Friend, Message } from '../../data/mockSocial';
 import { mockDMs, mockCurrentUser } from '../../data/mockSocial';
 
@@ -46,12 +46,6 @@ export default function DMWindow({ friend }: DMWindowProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground">
-                        <Phone className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground">
-                        <Video className="w-5 h-5" />
-                    </button>
                     <button className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground">
                         <MoreVertical className="w-5 h-5" />
                     </button>
