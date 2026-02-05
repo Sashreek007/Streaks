@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Hash } from 'lucide-react';
+import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Zap, Star, TrendingUp, Award } from 'lucide-react';
 
 // Mock data
 const userData = {
@@ -13,6 +13,8 @@ const userData = {
     tasksCompleted: 156,
     groups: 4,
   },
+  level: 24,
+  xpProgress: 65,
   joinedDate: 'January 2024',
 };
 
@@ -24,10 +26,10 @@ const recentActivity = [
 ];
 
 const achievements = [
-  { id: 1, name: 'First Streak', description: '7 days in a row', icon: Flame, earned: true },
-  { id: 2, name: 'Team Player', description: 'Join 3 groups', icon: Users, earned: true },
-  { id: 3, name: 'Century', description: 'Complete 100 tasks', icon: CheckCircle2, earned: true },
-  { id: 4, name: 'Champion', description: 'Reach top 10', icon: Trophy, earned: false },
+  { id: 1, name: 'First Streak', description: '7 days in a row', icon: Flame, earned: true, color: 'streak' },
+  { id: 2, name: 'Team Player', description: 'Join 3 groups', icon: Users, earned: true, color: 'primary' },
+  { id: 3, name: 'Century', description: 'Complete 100 tasks', icon: CheckCircle2, earned: true, color: 'success' },
+  { id: 4, name: 'Champion', description: 'Reach top 10', icon: Trophy, earned: false, color: 'achievement' },
 ];
 
 export default function ProfilePage() {
@@ -36,82 +38,119 @@ export default function ProfilePage() {
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-8">
       {/* Identity Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-black border border-white/10 p-8 lg:p-10 shadow-2xl">
-        <div className="absolute inset-0 bg-noise opacity-20 pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-border p-8 lg:p-10 shadow-2xl">
+        <div className="absolute inset-0 bg-noise opacity-10 pointer-events-none" />
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-streak/10 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
-          {/* Avatar */}
-          <div className="w-32 h-32 rounded-none bg-primary flex items-center justify-center text-primary-foreground text-4xl font-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
-            {userData.avatar}
+          {/* Avatar with Level Ring */}
+          <div className="relative">
+            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl bg-gradient-to-br from-primary to-success flex items-center justify-center text-white text-4xl font-black shadow-xl">
+              {userData.avatar}
+            </div>
+            <div className="absolute -bottom-2 -right-2 bg-achievement text-achievement-foreground px-3 py-1 rounded-full text-sm font-black shadow-lg flex items-center gap-1">
+              <Star className="w-3 h-3" />
+              LVL {userData.level}
+            </div>
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter uppercase">{userData.name}</h1>
-                <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold uppercase tracking-widest rounded-sm animate-pulse">
-                  Operative
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-3xl lg:text-4xl font-black text-foreground tracking-tight">{userData.name}</h1>
+                <div className="px-3 py-1 bg-xp/10 border border-xp/20 text-xp text-xs font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
+                  <Award className="w-3 h-3" />
+                  Elite
                 </div>
               </div>
-              <p className="text-muted-foreground font-mono text-sm mt-1">{userData.username} • EST. {userData.joinedDate}</p>
+              <p className="text-muted-foreground font-medium text-sm mt-1">{userData.username} • Member since {userData.joinedDate}</p>
             </div>
 
-            <div className="flex gap-4">
-              <button className="flex items-center gap-2 px-6 py-2 bg-white text-black font-bold uppercase tracking-wide hover:bg-white/90 transition-colors">
+            {/* XP Progress Bar */}
+            <div className="max-w-md">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="text-muted-foreground font-medium">Level {userData.level}</span>
+                <span className="text-xp font-bold">{userData.xpProgress}% to Level {userData.level + 1}</span>
+              </div>
+              <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-xp via-primary to-success transition-all duration-500"
+                  style={{ width: `${userData.xpProgress}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
                 <Edit2 className="w-4 h-4" />
-                Edit ID
+                Edit Profile
               </button>
-              <button className="flex items-center gap-2 px-6 py-2 border border-white/20 text-white font-bold uppercase tracking-wide hover:bg-white/10 transition-colors">
+              <button className="flex items-center gap-2 px-5 py-2.5 border border-border bg-secondary/50 text-foreground rounded-xl font-bold hover:bg-secondary transition-all">
                 <Settings className="w-4 h-4" />
-                Config
+                Settings
               </button>
             </div>
           </div>
         </div>
 
-        {/* Obsession Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-12 pt-8 border-t border-white/10">
-          <div className="bg-white/5 border border-white/5 p-4 rounded-sm hover:bg-white/10 transition-colors group">
-            <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mb-1">Total Score</div>
-            <div className="text-3xl font-black text-white group-hover:text-primary transition-colors">{userData.stats.score.toLocaleString()}</div>
-          </div>
-          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-sm hover:bg-red-500/20 transition-colors group">
-            <div className="text-xs text-red-400 uppercase tracking-widest font-mono mb-1 flex items-center gap-2">
-              Active Streak <Flame className="w-3 h-3 animate-pulse" />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10 pt-8 border-t border-border/50">
+          <div className="bg-card/80 border border-border p-5 rounded-2xl hover:border-primary/30 transition-colors group">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-widest font-bold mb-2">
+              <Zap className="w-4 h-4 text-xp" />
+              Total XP
             </div>
-            <div className="text-3xl font-black text-red-500">{userData.stats.streak} <span className="text-base opacity-50">DAYS</span></div>
+            <div className="text-3xl font-black text-foreground group-hover:text-primary transition-colors">{userData.stats.score.toLocaleString()}</div>
           </div>
-          <div className="bg-white/5 border border-white/5 p-4 rounded-sm hover:bg-white/10 transition-colors group">
-            <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mb-1">Missions Done</div>
-            <div className="text-3xl font-black text-white group-hover:text-primary transition-colors">{userData.stats.tasksCompleted}</div>
+
+          <div className="bg-streak/10 border border-streak/20 p-5 rounded-2xl hover:border-streak/40 transition-colors group">
+            <div className="flex items-center gap-2 text-xs text-streak uppercase tracking-widest font-bold mb-2">
+              <Flame className="w-4 h-4 animate-streak-fire" />
+              Active Streak
+            </div>
+            <div className="text-3xl font-black text-streak">{userData.stats.streak} <span className="text-base opacity-60">days</span></div>
           </div>
-          <div className="bg-white/5 border border-white/5 p-4 rounded-sm hover:bg-white/10 transition-colors group">
-            <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mb-1">Squads</div>
-            <div className="text-3xl font-black text-white group-hover:text-primary transition-colors">{userData.stats.groups}</div>
+
+          <div className="bg-success/10 border border-success/20 p-5 rounded-2xl hover:border-success/40 transition-colors group">
+            <div className="flex items-center gap-2 text-xs text-success uppercase tracking-widest font-bold mb-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Completed
+            </div>
+            <div className="text-3xl font-black text-success">{userData.stats.tasksCompleted}</div>
+          </div>
+
+          <div className="bg-primary/10 border border-primary/20 p-5 rounded-2xl hover:border-primary/40 transition-colors group">
+            <div className="flex items-center gap-2 text-xs text-primary uppercase tracking-widest font-bold mb-2">
+              <Users className="w-4 h-4" />
+              Squads
+            </div>
+            <div className="text-3xl font-black text-primary">{userData.stats.groups}</div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-8 border-b border-border/40">
+      <div className="flex gap-2 bg-secondary/50 p-1.5 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab('activity')}
-          className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'activity'
-            ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
+          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'activity'
+            ? 'bg-primary text-primary-foreground shadow-lg'
             : 'text-muted-foreground hover:text-foreground'
             }`}
         >
-          Battle Log
+          <TrendingUp className="w-4 h-4" />
+          Activity
         </button>
         <button
           onClick={() => setActiveTab('achievements')}
-          className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'achievements'
-            ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
+          className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'achievements'
+            ? 'bg-primary text-primary-foreground shadow-lg'
             : 'text-muted-foreground hover:text-foreground'
             }`}
         >
-          Medals
+          <Trophy className="w-4 h-4" />
+          Achievements
         </button>
       </div>
 
@@ -121,21 +160,24 @@ export default function ProfilePage() {
           {recentActivity.map((item) => (
             <div
               key={item.id}
-              className="bg-card/50 border border-border/50 p-6 flex items-center gap-6 group hover:border-primary/30 transition-all hover:bg-card/80"
+              className="bg-card border border-border p-5 rounded-2xl flex items-center gap-5 group hover:border-primary/30 transition-all hover:shadow-md"
             >
-              <div className="w-12 h-12 flex items-center justify-center bg-secondary/50 rounded-sm font-bold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors decoration-slice">
+              <div className={`w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-colors ${item.type === 'task'
+                ? 'bg-success/10 text-success group-hover:bg-success/20'
+                : item.type === 'streak'
+                  ? 'bg-streak/10 text-streak group-hover:bg-streak/20'
+                  : 'bg-achievement/10 text-achievement group-hover:bg-achievement/20'
+                }`}>
                 {item.type === 'task' && <CheckCircle2 className="w-6 h-6" />}
                 {item.type === 'streak' && <Flame className="w-6 h-6" />}
                 {item.type === 'badge' && <Trophy className="w-6 h-6" />}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-lg text-foreground uppercase">{item.title}</span>
-                  <span className="text-[10px] font-mono text-muted-foreground px-2 py-1 bg-secondary rounded-sm uppercase">{item.time}</span>
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{item.time}</p>
               </div>
-              <div className="hidden sm:flex items-center gap-2 font-mono text-green-500 font-bold bg-green-500/5 px-4 py-2 rounded-sm">
-                <Hash className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 font-bold text-xp bg-xp/10 px-4 py-2 rounded-full text-sm">
+                <Zap className="w-4 h-4" />
                 +{item.points} XP
               </div>
             </div>
@@ -146,17 +188,30 @@ export default function ProfilePage() {
           {achievements.map((achievement) => (
             <div
               key={achievement.id}
-              className={`border p-6 flex items-center gap-5 transition-all ${achievement.earned
-                ? 'bg-gradient-to-br from-card to-secondary/30 border-primary/20 hover:border-primary/50'
-                : 'bg-muted/10 border-border opacity-60 grayscale'
+              className={`border p-6 rounded-2xl flex items-center gap-5 transition-all ${achievement.earned
+                ? `bg-${achievement.color}/5 border-${achievement.color}/20 hover:border-${achievement.color}/40 hover:shadow-md`
+                : 'bg-muted/10 border-border opacity-50'
                 }`}
             >
-              <div className={`w-14 h-14 rounded-sm flex items-center justify-center ${achievement.earned ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${achievement.earned
+                ? achievement.color === 'streak'
+                  ? 'bg-streak text-white shadow-lg'
+                  : achievement.color === 'primary'
+                    ? 'bg-primary text-white shadow-lg'
+                    : achievement.color === 'success'
+                      ? 'bg-success text-white shadow-lg'
+                      : 'bg-achievement text-white shadow-lg'
+                : 'bg-muted text-muted-foreground'
                 }`}>
                 <achievement.icon className="w-7 h-7" />
               </div>
-              <div>
-                <p className="font-bold text-foreground uppercase tracking-wide">{achievement.name}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-foreground">{achievement.name}</p>
+                  {achievement.earned && (
+                    <CheckCircle2 className="w-4 h-4 text-success" />
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">{achievement.description}</p>
               </div>
             </div>

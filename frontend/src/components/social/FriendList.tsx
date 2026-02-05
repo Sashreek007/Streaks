@@ -1,5 +1,5 @@
 
-import { MessageSquare, UserPlus } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import type { Friend } from '../../data/mockSocial';
 import { mockFriends } from '../../data/mockSocial';
 
@@ -11,11 +11,8 @@ interface FriendListProps {
 export default function FriendList({ onSelectFriend, selectedFriendId }: FriendListProps) {
     return (
         <div className="bg-card border border-border rounded-xl h-full flex flex-col">
-            <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="p-4 border-b border-border">
                 <h2 className="font-semibold text-foreground">Friends</h2>
-                <button className="text-primary hover:text-primary/80 transition-colors">
-                    <UserPlus className="w-5 h-5" />
-                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2">
