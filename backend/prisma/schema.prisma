@@ -1,14 +1,659 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================
+// CORE USER SYSTEM
+// =====================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  displayName  String   @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  bio          String?
+  passwordHash String?  @map("password_hash")
+
+  // Gamification
+  totalXp       Int  @default(0) @map("total_xp")
+  level         Int  @default(1)
+  currentStreak Int  @default(0) @map("current_streak")
+  longestStreak Int  @default(0) @map("longest_streak")
+  lastActivityDate DateTime? @map("last_activity_date")
+
+  // Timestamps
+  emailVerified Boolean  @default(false) @map("email_verified")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  settings           UserSettings?
+  presence           UserPresence?
+  oauthConnections   OAuthConnection[]
+
+  // Friends
+  friendRequestsSent     Friendship[] @relation("FriendRequester")
+  friendRequestsReceived Friendship[] @relation("FriendAddressee")
+
+  // Conversations
+  conversationParticipants ConversationParticipant[]
+  messagesSent             Message[]
+
+  // Groups
+  squadMemberships     SquadMember[]
+  squadsOwned          Squad[]       @relation("SquadOwner")
+  communityMemberships CommunityMember[]
+  communitiesOwned     Community[]   @relation("CommunityOwner")
+
+  // Tasks
+  tasks            Task[]
+  taskCompletions  TaskCompletion[]
+  verificationsBy  TaskCompletion[] @relation("Verifier")
+
+  // Challenges created
+  challengesCreated CommunityChallenge[]
+
+  // Gamification
+  achievements     UserAchievement[]
+  xpTransactions   XpTransaction[]
+
+  // Social
+  posts         Post[]
+  postLikes     PostLike[]
+  postComments  PostComment[]
+
+  // Notifications
+  notifications Notification[]
+
+  // Leaderboard
+  leaderboardEntries LeaderboardDaily[]
+
+  // Verification assignments
+  verificationAssignments VerificationQueue[]
+
+  @@map("users")
+}
+
+model UserSettings {
+  userId String @id @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Appearance
+  theme String @default("dark")
+
+  // Notifications
+  pushEnabled        Boolean @default(true) @map("push_enabled")
+  streakReminders    Boolean @default(true) @map("streak_reminders")
+  friendActivity     Boolean @default(true) @map("friend_activity")
+  squadUpdates       Boolean @default(true) @map("squad_updates")
+  communityUpdates   Boolean @default(true) @map("community_updates")
+  leaderboardChanges Boolean @default(false) @map("leaderboard_changes")
+  emailDigest        Boolean @default(true) @map("email_digest")
+
+  // Privacy
+  profilePublic     Boolean @default(true) @map("profile_public")
+  showStreak        Boolean @default(true) @map("show_streak")
+  showScore         Boolean @default(true) @map("show_score")
+  allowDms          Boolean @default(true) @map("allow_dms")
+  showOnLeaderboard Boolean @default(true) @map("show_on_leaderboard")
+
+  // Streak Settings
+  reminderTime       String  @default("09:00") @map("reminder_time")
+  gracePeriodEnabled Boolean @default(true) @map("grace_period_enabled")
+  gracePeriodHours   Int     @default(2) @map("grace_period_hours")
+  weekendMode        Boolean @default(false) @map("weekend_mode")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}
+
+model OAuthConnection {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       String   // 'google', 'github', 'apple'
+  providerUserId String   @map("provider_user_id")
+  accessToken    String?  @map("access_token")
+  refreshToken   String?  @map("refresh_token")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([provider, providerUserId])
+  @@map("oauth_connections")
+}
+
+model UserPresence {
+  userId   String   @id @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status   String   @default("offline") // 'online', 'offline', 'busy', 'away'
+  lastSeen DateTime @default(now()) @map("last_seen")
+
+  @@map("user_presence")
+}
+
+// =====================================================
+// FRIEND SYSTEM
+// =====================================================
+
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String   @map("requester_id")
+  requester   User     @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String   @map("addressee_id")
+  addressee   User     @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // 'pending', 'accepted', 'rejected', 'blocked'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
+}
+
+// =====================================================
+// DIRECT MESSAGING
+// =====================================================
+
+model Conversation {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?    @map("last_read_at")
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?      @map("sender_id")
+  sender         User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  content        String
+  messageType    String       @default("text") @map("message_type") // 'text', 'image', 'system'
+  imageUrl       String?      @map("image_url")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  editedAt       DateTime?    @map("edited_at")
+  deletedAt      DateTime?    @map("deleted_at")
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+// =====================================================
+// SQUADS (Private Friend Groups)
+// =====================================================
+
+model Squad {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatarUrl   String?  @map("avatar_url")
+  ownerId     String?  @map("owner_id")
+  owner       User?    @relation("SquadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  inviteCode  String?  @unique @map("invite_code")
+
+  // Verification Settings
+  verificationMode String @default("manual") @map("verification_mode") // 'manual', 'ai', 'hybrid'
+
+  // Stats
+  memberCount   Int @default(1) @map("member_count")
+  currentStreak Int @default(0) @map("current_streak")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members    SquadMember[]
+  aiSettings SquadAiSettings?
+  tasks      Task[]
+  verificationQueue VerificationQueue[]
+
+  @@map("squads")
+}
+
+model SquadMember {
+  squadId  String   @map("squad_id")
+  squad    Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId   String   @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member") // 'owner', 'admin', 'moderator', 'member'
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  @@id([squadId, userId])
+  @@map("squad_members")
+}
+
+model SquadAiSettings {
+  squadId              String  @id @map("squad_id")
+  squad                Squad   @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  provider             String  // 'openai', 'anthropic', 'google'
+  apiKeyEncrypted      String  @map("api_key_encrypted")
+  model                String?
+  verificationPrompt   String? @map("verification_prompt")
+  confidenceThreshold  Float   @default(0.70) @map("confidence_threshold")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("squad_ai_settings")
+}
+
+// =====================================================
+// COMMUNITIES (Public Groups)
+// =====================================================
+
+model Community {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatarUrl   String?  @map("avatar_url")
+  bannerUrl   String?  @map("banner_url")
+  ownerId     String?  @map("owner_id")
+  owner       User?    @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  // Settings
+  category     String?
+  isPublic     Boolean @default(true) @map("is_public")
+  xpMultiplier Float   @default(1.00) @map("xp_multiplier")
+
+  // Streak Settings
+  streakThresholdPercent Int @default(70) @map("streak_threshold_percent")
+  currentStreak          Int @default(0) @map("current_streak")
+
+  // Verification Settings
+  verificationMode String @default("manual") @map("verification_mode")
+
+  // Stats
+  memberCount Int @default(1) @map("member_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members    CommunityMember[]
+  aiSettings CommunityAiSettings?
+  challenges CommunityChallenge[]
+  tasks      Task[]
+  posts      Post[]
+  verificationQueue VerificationQueue[]
+
+  @@map("communities")
+}
+
+model CommunityMember {
+  communityId String    @map("community_id")
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("member")
+  joinedAt    DateTime  @default(now()) @map("joined_at")
+
+  @@id([communityId, userId])
+  @@map("community_members")
+}
+
+model CommunityAiSettings {
+  communityId         String    @id @map("community_id")
+  community           Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  provider            String
+  apiKeyEncrypted     String    @map("api_key_encrypted")
+  model               String?
+  verificationPrompt  String?   @map("verification_prompt")
+  confidenceThreshold Float     @default(0.70) @map("confidence_threshold")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("community_ai_settings")
+}
+
+model CommunityChallenge {
+  id          String    @id @default(uuid())
+  communityId String    @map("community_id")
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdById String?   @map("created_by")
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  category    String?
+
+  // XP & Difficulty
+  baseXp     Int    @default(50) @map("base_xp")
+  difficulty String @default("medium") // 'easy', 'medium', 'hard', 'extreme'
+
+  // Schedule
+  frequency String    @default("daily") // 'daily', 'weekly', 'one-time'
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+
+  // Verification
+  requiresProof            Boolean @default(true) @map("requires_proof")
+  verificationInstructions String? @map("verification_instructions")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tasks Task[]
+
+  @@map("community_challenges")
+}
+
+// =====================================================
+// TASKS
+// =====================================================
+
+model Task {
+  id          String  @id @default(uuid())
+  userId      String  @map("user_id")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic Info
+  title       String
+  description String?
+  category    String?
+
+  // Task Settings
+  priority   String @default("medium") // 'low', 'medium', 'high'
+  difficulty String @default("medium") // 'easy', 'medium', 'hard', 'extreme'
+  baseXp     Int    @default(50) @map("base_xp")
+
+  // Schedule
+  frequency String    @default("daily") // 'daily', 'weekly', 'one-time'
+  dueDate   DateTime? @map("due_date")
+  dueTime   String?   @map("due_time")
+
+  // Visibility
+  visibility  String     @default("private") // 'private', 'friends', 'squad', 'community', 'public'
+  squadId     String?    @map("squad_id")
+  squad       Squad?     @relation(fields: [squadId], references: [id], onDelete: SetNull)
+  communityId String?    @map("community_id")
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  challengeId String?    @map("challenge_id")
+  challenge   CommunityChallenge? @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+
+  // Verification
+  requiresProof Boolean @default(false) @map("requires_proof")
+
+  // Streak Tracking
+  currentStreak     Int       @default(0) @map("current_streak")
+  longestStreak     Int       @default(0) @map("longest_streak")
+  lastCompletedDate DateTime? @map("last_completed_date")
+
+  // Status
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  completions TaskCompletion[]
+
+  @@index([userId, isActive])
+  @@index([squadId])
+  @@index([communityId])
+  @@map("tasks")
+}
+
+model TaskCompletion {
+  id             String   @id @default(uuid())
+  taskId         String   @map("task_id")
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  completedAt    DateTime @default(now()) @map("completed_at")
+  completionDate DateTime @default(now()) @map("completion_date") @db.Date
+
+  // Proof
+  proofUrl  String? @map("proof_url")
+  proofType String? @map("proof_type") // 'image', 'video', 'text'
+
+  // Verification
+  verificationStatus String    @default("pending") @map("verification_status") // 'pending', 'verified', 'rejected', 'auto_verified'
+  verifiedById       String?   @map("verified_by")
+  verifiedBy         User?     @relation("Verifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt         DateTime? @map("verified_at")
+  aiConfidence       Float?    @map("ai_confidence")
+  rejectionReason    String?   @map("rejection_reason")
+
+  // XP Awarded
+  xpEarned        Int @default(0) @map("xp_earned")
+  streakBonus     Int @default(0) @map("streak_bonus")
+  multiplierBonus Int @default(0) @map("multiplier_bonus")
+
+  verificationQueue VerificationQueue?
+  post              Post?
+
+  @@unique([taskId, completionDate])
+  @@index([userId, completionDate])
+  @@index([verificationStatus])
+  @@map("task_completions")
+}
+
+// =====================================================
+// VERIFICATION QUEUE
+// =====================================================
+
+model VerificationQueue {
+  id           String         @id @default(uuid())
+  completionId String         @unique @map("completion_id")
+  completion   TaskCompletion @relation(fields: [completionId], references: [id], onDelete: Cascade)
+
+  // Context
+  squadId     String?    @map("squad_id")
+  squad       Squad?     @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  communityId String?    @map("community_id")
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  // Status
+  status   String @default("pending") // 'pending', 'in_review', 'verified', 'rejected'
+  priority Int    @default(0)
+
+  // Assignment
+  assignedToId String? @map("assigned_to")
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([squadId, status])
+  @@index([communityId, status])
+  @@map("verification_queue")
+}
+
+// =====================================================
+// GAMIFICATION
+// =====================================================
+
+model Achievement {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  icon        String? // Icon name from lucide
+  category    String? // 'streak', 'social', 'completion', 'special'
+
+  // Unlock Criteria
+  criteria Json // {"type": "streak", "value": 7}
+
+  xpReward Int     @default(0) @map("xp_reward")
+  isHidden Boolean @default(false) @map("is_hidden")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String      @map("user_id")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String      @map("achievement_id")
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now()) @map("earned_at")
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model XpTransaction {
+  id       String @id @default(uuid())
+  userId   String @map("user_id")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount   Int    // Can be negative for penalties
+  source   String // 'task_completion', 'streak_bonus', 'achievement', 'multiplier', etc.
+  sourceId String? @map("source_id")
+
+  // Breakdown
+  baseAmount          Int?   @map("base_amount")
+  streakMultiplier    Float? @map("streak_multiplier")
+  communityMultiplier Float? @map("community_multiplier")
+
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("xp_transactions")
+}
+
+model LevelThreshold {
+  level      Int     @id
+  xpRequired Int     @map("xp_required")
+  title      String?
+  perks      Json?
+
+  @@map("level_thresholds")
+}
+
+// =====================================================
+// SOCIAL FEED
+// =====================================================
+
+model Post {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Content
+  content  String?
+  postType String  @map("post_type") // 'task_completion', 'streak_milestone', 'achievement', 'level_up', 'joined_community', 'custom'
+
+  // References
+  taskCompletionId String?         @unique @map("task_completion_id")
+  taskCompletion   TaskCompletion? @relation(fields: [taskCompletionId], references: [id], onDelete: SetNull)
+  achievementId    String?         @map("achievement_id")
+  communityId      String?         @map("community_id")
+  community        Community?      @relation(fields: [communityId], references: [id], onDelete: SetNull)
+
+  // Media
+  imageUrl String? @map("image_url")
+
+  // Visibility
+  visibility String @default("public") // 'private', 'friends', 'public'
+
+  // Stats (denormalized)
+  likesCount    Int @default(0) @map("likes_count")
+  commentsCount Int @default(0) @map("comments_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+model PostLike {
+  postId    String   @map("post_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([postId, userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("post_comments")
+}
+
+// =====================================================
+// NOTIFICATIONS
+// =====================================================
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type  String // 'friend_request', 'friend_accepted', 'task_verified', etc.
+  title String
+  body  String?
+
+  // References
+  referenceType String? @map("reference_type")
+  referenceId   String? @map("reference_id")
+
+  // Status
+  read   Boolean   @default(false)
+  readAt DateTime? @map("read_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// =====================================================
+// LEADERBOARD
+// =====================================================
+
+model LeaderboardDaily {
+  id     String   @id @default(uuid())
+  userId String   @map("user_id")
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @default(now()) @db.Date
+
+  // Scores
+  totalXp       Int @map("total_xp")
+  xpToday       Int @default(0) @map("xp_today")
+  currentStreak Int @default(0) @map("current_streak")
+
+  // Rankings
+  globalRank Int? @map("global_rank")
+  rankChange Int  @default(0) @map("rank_change")
+
+  @@unique([userId, date])
+  @@index([date, globalRank])
+  @@map("leaderboard_daily")
 }
