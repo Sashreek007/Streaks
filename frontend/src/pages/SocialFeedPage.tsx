@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Image, Trophy, Flame, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Image, Trophy, Flame } from 'lucide-react';
 
 // Mock data
 const feedPosts = [

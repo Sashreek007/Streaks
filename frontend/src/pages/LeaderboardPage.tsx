@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Flame, TrendingUp, Medal } from 'lucide-react';
+import { Trophy, Flame, TrendingUp } from 'lucide-react';
 
 // Mock data
 const leaderboardData = [
