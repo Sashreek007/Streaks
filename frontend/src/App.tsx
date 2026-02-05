@@ -7,6 +7,7 @@ import SocialFeedPage from './pages/SocialFeedPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
+import FriendsPage from './pages/FriendsPage';
 import AppLayout from './components/AppLayout';
 
 function App() {
@@ -41,6 +42,11 @@ function App() {
           <Route path="/leaderboard" element={
             <AppLayout>
               <LeaderboardPage />
+            </AppLayout>
+          } />
+          <Route path="/friends" element={
+            <AppLayout>
+              <FriendsPage />
             </AppLayout>
           } />
           <Route path="/profile" element={
