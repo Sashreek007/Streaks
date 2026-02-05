@@ -69,9 +69,22 @@ export default function AppSidebar() {
 
         {/* Bottom Actions */}
         <div className="flex flex-col gap-4 w-full px-4">
-          <button className="flex items-center justify-center p-3 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-2xl transition-colors">
+          <NavLink
+            to="/settings"
+            title="Settings"
+            className={({ isActive }) =>
+              `relative group flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${isActive
+                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-110'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`
+            }
+          >
             <Settings className="w-6 h-6" />
-          </button>
+            {/* Tooltip */}
+            <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-popover-foreground text-xs font-medium rounded-lg opacity-0 -translate-x-2 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all whitespace-nowrap border border-border shadow-lg z-50">
+              Settings
+            </div>
+          </NavLink>
           <button className="flex items-center justify-center p-3 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-colors">
             <LogOut className="w-6 h-6" />
           </button>

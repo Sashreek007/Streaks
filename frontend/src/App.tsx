@@ -8,6 +8,7 @@ import CommunitiesPage from './pages/CommunitiesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import FriendsPage from './pages/FriendsPage';
+import SettingsPage from './pages/SettingsPage';
 import AppLayout from './components/AppLayout';
 
 function App() {
@@ -52,6 +53,11 @@ function App() {
           <Route path="/profile" element={
             <AppLayout>
               <ProfilePage />
+            </AppLayout>
+          } />
+          <Route path="/settings" element={
+            <AppLayout>
+              <SettingsPage />
             </AppLayout>
           } />
 
