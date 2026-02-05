@@ -1,0 +1,263 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import prisma from '../lib/prisma.js';
+import { authenticate } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import type { AuthenticatedRequest } from '../types/index.js';
+
+const router = Router();
+
+const sendMessageSchema = z.object({
+  content: z.string().min(1).max(2000),
+  imageUrl: z.string().url().optional(),
+});
+
+// GET /api/messages/conversations - Get all conversations
+router.get('/conversations', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const userId = req.user!.id;
+
+    const participants = await prisma.conversationParticipant.findMany({
+      where: { userId },
+      include: {
+        conversation: {
+          include: {
+            participants: {
+              where: { userId: { not: userId } },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatarUrl: true,
+                    presence: { select: { status: true } },
+                  },
+                },
+              },
+            },
+            messages: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { conversation: { updatedAt: 'desc' } },
+    });
+
+    const conversations = participants.map((p) => {
+      const otherParticipant = p.conversation.participants[0];
+      const lastMessage = p.conversation.messages[0];
+
+      return {
+        id: p.conversation.id,
+        friend: otherParticipant?.user,
+        lastMessage: lastMessage
+          ? {
+              content: lastMessage.content,
+              createdAt: lastMessage.createdAt,
+              isOwn: lastMessage.senderId === userId,
+            }
+          : null,
+        lastReadAt: p.lastReadAt,
+        hasUnread: lastMessage && p.lastReadAt
+          ? lastMessage.createdAt > p.lastReadAt && lastMessage.senderId !== userId
+          : !!lastMessage && lastMessage.senderId !== userId,
+      };
+    });
+
+    res.json({ success: true, data: conversations });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/messages/:conversationId - Get messages in conversation
+router.get('/:conversationId', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user!.id;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const cursor = req.query.cursor as string;
+
+    // Verify user is participant
+    const participant = await prisma.conversationParticipant.findUnique({
+      where: {
+        conversationId_userId: { conversationId, userId },
+      },
+    });
+
+    if (!participant) {
+      res.status(403).json({ success: false, error: 'Not a participant' });
+      return;
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId,
+        deletedAt: null,
+        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+
+    // Mark as read
+    await prisma.conversationParticipant.update({
+      where: {
+        conversationId_userId: { conversationId, userId },
+      },
+      data: { lastReadAt: new Date() },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        messages: messages.reverse(),
+        hasMore,
+        nextCursor: hasMore ? messages[0].createdAt.toISOString() : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/messages/:friendId - Send message (creates conversation if needed)
+router.post(
+  '/:friendId',
+  authenticate,
+  validate(sendMessageSchema),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { friendId } = req.params;
+      const { content, imageUrl } = req.body;
+      const userId = req.user!.id;
+
+      // Check if they are friends
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          status: 'accepted',
+          OR: [
+            { requesterId: userId, addresseeId: friendId },
+            { requesterId: friendId, addresseeId: userId },
+          ],
+        },
+      });
+
+      if (!friendship) {
+        res.status(403).json({ success: false, error: 'Not friends' });
+        return;
+      }
+
+      // Find or create conversation
+      let conversation = await prisma.conversation.findFirst({
+        where: {
+          participants: {
+            every: {
+              userId: { in: [userId, friendId] },
+            },
+          },
+        },
+        include: {
+          participants: true,
+        },
+      });
+
+      if (!conversation || conversation.participants.length !== 2) {
+        conversation = await prisma.conversation.create({
+          data: {
+            participants: {
+              create: [{ userId }, { userId: friendId }],
+            },
+          },
+          include: { participants: true },
+        });
+      }
+
+      // Create message
+      const message = await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: userId,
+          content,
+          imageUrl,
+          messageType: imageUrl ? 'image' : 'text',
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+      // Update conversation timestamp
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { updatedAt: new Date() },
+      });
+
+      // Create notification for recipient
+      await prisma.notification.create({
+        data: {
+          userId: friendId,
+          type: 'message',
+          title: 'New Message',
+          body: `${req.user!.username}: ${content.slice(0, 50)}${content.length > 50 ? '...' : ''}`,
+          referenceType: 'conversation',
+          referenceId: conversation.id,
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          message,
+          conversationId: conversation.id,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /api/messages/:conversationId/read - Mark conversation as read
+router.post('/:conversationId/read', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user!.id;
+
+    await prisma.conversationParticipant.update({
+      where: {
+        conversationId_userId: { conversationId, userId },
+      },
+      data: { lastReadAt: new Date() },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
