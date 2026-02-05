@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Calendar, TrendingUp, Hash } from 'lucide-react';
+import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Hash } from 'lucide-react';
 
 // Mock data
 const userData = {
@@ -98,8 +98,8 @@ export default function ProfilePage() {
         <button
           onClick={() => setActiveTab('activity')}
           className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'activity'
-              ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
-              : 'text-muted-foreground hover:text-foreground'
+            ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
+            : 'text-muted-foreground hover:text-foreground'
             }`}
         >
           Battle Log
@@ -107,8 +107,8 @@ export default function ProfilePage() {
         <button
           onClick={() => setActiveTab('achievements')}
           className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'achievements'
-              ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
-              : 'text-muted-foreground hover:text-foreground'
+            ? 'text-foreground border-b-2 border-primary translate-y-[1px]'
+            : 'text-muted-foreground hover:text-foreground'
             }`}
         >
           Medals
@@ -147,8 +147,8 @@ export default function ProfilePage() {
             <div
               key={achievement.id}
               className={`border p-6 flex items-center gap-5 transition-all ${achievement.earned
-                  ? 'bg-gradient-to-br from-card to-secondary/30 border-primary/20 hover:border-primary/50'
-                  : 'bg-muted/10 border-border opacity-60 grayscale'
+                ? 'bg-gradient-to-br from-card to-secondary/30 border-primary/20 hover:border-primary/50'
+                : 'bg-muted/10 border-border opacity-60 grayscale'
                 }`}
             >
               <div className={`w-14 h-14 rounded-sm flex items-center justify-center ${achievement.earned ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'
