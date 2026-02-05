@@ -17,7 +17,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Social', href: '/social', icon: MessageSquare },
-  { name: 'Groups', href: '/groups', icon: Users },
+  { name: 'Communities', href: '/communities', icon: Users },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { name: 'Profile', href: '/profile', icon: User },
 ];
@@ -53,11 +53,10 @@ export default function AppSidebar() {
               <li key={item.name}>
                 <Link
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-5 h-5" />
                   {item.name}
