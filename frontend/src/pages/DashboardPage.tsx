@@ -1,31 +1,93 @@
-import { Flame, Target, Clock, Check, TrendingUp, Zap, Trophy, Star } from 'lucide-react';
-
-// Mock data
-const todaysTasks = [
-  { id: 1, title: 'Morning workout', time: '7:00 AM', category: 'Health', completed: true, xp: 50 },
-  { id: 2, title: 'Read for 30 minutes', time: '9:00 AM', category: 'Learning', completed: true, xp: 30 },
-  { id: 3, title: 'Work on side project', time: '2:00 PM', category: 'Career', completed: false, xp: 75 },
-  { id: 4, title: 'Meditate', time: '6:00 PM', category: 'Wellness', completed: false, xp: 25 },
-  { id: 5, title: 'Practice guitar', time: '8:00 PM', category: 'Hobbies', completed: false, xp: 40 },
-];
+import { useState, useEffect } from 'react';
+import { Flame, Target, Clock, Check, TrendingUp, Zap, Trophy, Star, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { tasksApi } from '../services/api';
+import type { Task } from '../services/api';
 
 const categoryColors: Record<string, string> = {
-  Health: 'bg-success/15 text-success border-success/20',
-  Learning: 'bg-primary/15 text-primary border-primary/20',
-  Career: 'bg-xp/15 text-xp border-xp/20',
-  Wellness: 'bg-energy/15 text-energy border-energy/20',
-  Hobbies: 'bg-streak/15 text-streak border-streak/20',
+  health: 'bg-success/15 text-success border-success/20',
+  learning: 'bg-primary/15 text-primary border-primary/20',
+  career: 'bg-xp/15 text-xp border-xp/20',
+  wellness: 'bg-energy/15 text-energy border-energy/20',
+  fitness: 'bg-streak/15 text-streak border-streak/20',
+  productivity: 'bg-achievement/15 text-achievement border-achievement/20',
+  default: 'bg-muted/15 text-muted-foreground border-muted/20',
 };
 
-export default function DashboardPage() {
-  const completedCount = todaysTasks.filter(t => t.completed).length;
-  const progress = (completedCount / todaysTasks.length) * 100;
-  const totalXP = todaysTasks.filter(t => t.completed).reduce((acc, t) => acc + t.xp, 0);
-  const pendingXP = todaysTasks.filter(t => !t.completed).reduce((acc, t) => acc + t.xp, 0);
+interface TaskWithCompletion extends Task {
+  isCompletedToday: boolean;
+  xp: number;
+}
 
-  // Mock "Danger" state for the demo feel
-  const isDanger = true;
-  const streakSaverTask = todaysTasks.find(t => !t.completed);
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<TaskWithCompletion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  const loadTasks = async () => {
+    try {
+      const response = await tasksApi.getAll();
+      if (response.success && response.data) {
+        // Transform tasks to include completion status
+        const today = new Date().toDateString();
+        const tasksWithCompletion: TaskWithCompletion[] = response.data.map(task => ({
+          ...task,
+          isCompletedToday: task.lastCompletedDate
+            ? new Date(task.lastCompletedDate).toDateString() === today
+            : false,
+          xp: task.baseXp,
+        }));
+        setTasks(tasksWithCompletion);
+      }
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    setCompletingTaskId(taskId);
+    try {
+      const response = await tasksApi.complete(taskId);
+      if (response.success) {
+        // Update local state
+        setTasks(prev => prev.map(t =>
+          t.id === taskId ? { ...t, isCompletedToday: true } : t
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+    } finally {
+      setCompletingTaskId(null);
+    }
+  };
+
+  const completedCount = tasks.filter(t => t.isCompletedToday).length;
+  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
+
+  // Danger state when streak is at risk (no tasks completed today)
+  const isDanger = completedCount === 0 && tasks.length > 0;
+  const streakSaverTask = tasks.find(t => !t.isCompletedToday);
+
+  // Calculate next milestone
+  const currentStreak = user?.currentStreak || 0;
+  const nextMilestone = currentStreak < 7 ? 7 : currentStreak < 14 ? 14 : currentStreak < 30 ? 30 : currentStreak < 90 ? 90 : 365;
+  const milestoneProgress = (currentStreak / nextMilestone) * 100;
+  const daysToMilestone = nextMilestone - currentStreak;
+
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-8">
@@ -52,19 +114,21 @@ export default function DashboardPage() {
             </div>
 
             <h1 className="text-8xl lg:text-[10rem] font-black tracking-tighter leading-none relative">
-              <span className="relative z-10">12</span>
+              <span className="relative z-10">{currentStreak}</span>
               {/* Glitch/Shadow effect for number */}
-              <span className="absolute top-1 left-1 text-black/20 z-0 blur-sm">12</span>
+              <span className="absolute top-1 left-1 text-black/20 z-0 blur-sm">{currentStreak}</span>
             </h1>
 
             <div className="text-2xl lg:text-3xl font-bold tracking-tight opacity-90 uppercase">
-              DAYS
+              {currentStreak === 1 ? 'DAY' : 'DAYS'}
             </div>
 
             <p className="mt-4 text-base text-white/80 max-w-md font-medium leading-relaxed">
               {isDanger
                 ? "Complete a task to keep your streak alive!"
-                : "You're on fire! Keep it up to reach your 14-day milestone."}
+                : currentStreak === 0
+                  ? "Start your streak today by completing a task!"
+                  : `You're on fire! Keep it up to reach your ${nextMilestone}-day milestone.`}
             </p>
           </div>
 
@@ -73,11 +137,11 @@ export default function DashboardPage() {
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="flex items-center gap-3 mb-2">
                 <Zap className="w-6 h-6 text-achievement" />
-                <span className="text-sm font-bold uppercase tracking-wide text-white/70">Today's XP</span>
+                <span className="text-sm font-bold uppercase tracking-wide text-white/70">Total XP</span>
               </div>
-              <div className="text-4xl font-black text-white">+{totalXP}</div>
+              <div className="text-4xl font-black text-white">{user?.totalXp?.toLocaleString() || 0}</div>
               <div className="text-sm text-white/60 mt-1">
-                <span className="text-achievement font-bold">+{pendingXP}</span> XP available
+                Level <span className="text-achievement font-bold">{user?.level || 1}</span>
               </div>
             </div>
 
@@ -86,11 +150,11 @@ export default function DashboardPage() {
                 <Trophy className="w-6 h-6 text-achievement" />
                 <span className="text-sm font-bold uppercase tracking-wide text-white/70">Next Reward</span>
               </div>
-              <div className="text-lg font-bold text-white">14-Day Badge</div>
+              <div className="text-lg font-bold text-white">{nextMilestone}-Day Badge</div>
               <div className="h-2 bg-white/20 rounded-full mt-3 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-achievement to-streak rounded-full transition-all duration-500" style={{ width: '85%' }} />
+                <div className="h-full bg-gradient-to-r from-achievement to-streak rounded-full transition-all duration-500" style={{ width: `${Math.min(milestoneProgress, 100)}%` }} />
               </div>
-              <div className="text-xs text-white/60 mt-2">2 days away</div>
+              <div className="text-xs text-white/60 mt-2">{daysToMilestone} days away</div>
             </div>
           </div>
         </div>
@@ -107,9 +171,9 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
               <div className="flex items-center gap-1 text-success font-bold">
                 <Check className="w-4 h-4" />
-                {completedCount}/{todaysTasks.length}
+                {completedCount}/{tasks.length}
               </div>
-              <span className="text-muted-foreground/50">•</span>
+              <span className="text-muted-foreground/50">|</span>
               <span>{Math.round(progress)}% complete</span>
             </div>
           </div>
@@ -122,114 +186,136 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="space-y-4">
-            {todaysTasks.map((task) => {
-              const isSaver = isDanger && task.id === streakSaverTask?.id;
+          {tasks.length === 0 ? (
+            <div className="text-center py-12 bg-card border border-border rounded-2xl">
+              <Target className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-foreground mb-2">No Tasks Yet</h3>
+              <p className="text-muted-foreground text-sm mb-4">Create your first task to start earning XP!</p>
+              <a href="/tasks" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                <Target className="w-4 h-4" />
+                Create Task
+              </a>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tasks.map((task) => {
+                const isSaver = isDanger && task.id === streakSaverTask?.id;
+                const isCompleting = completingTaskId === task.id;
+                const colorClass = categoryColors[task.category.toLowerCase()] || categoryColors.default;
 
-              return (
-                <div
-                  key={task.id}
-                  className={`group relative flex items-center gap-5 p-5 rounded-2xl border transition-all duration-300 ${task.completed
-                    ? 'bg-success/5 border-success/20'
-                    : isSaver
-                      ? 'bg-streak/5 border-streak/50 shadow-lg streak-glow'
-                      : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
-                    }`}
-                >
-                  {isSaver && (
-                    <div className="absolute -top-3 -right-3 bg-streak text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg animate-bounce flex items-center gap-1">
-                      <Flame className="w-3 h-3" />
-                      Streak Saver
-                    </div>
-                  )}
-
-                  <button
-                    className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${task.completed
-                      ? 'bg-success border-success scale-110'
+                return (
+                  <div
+                    key={task.id}
+                    className={`group relative flex items-center gap-5 p-5 rounded-2xl border transition-all duration-300 ${task.isCompletedToday
+                      ? 'bg-success/5 border-success/20'
                       : isSaver
-                        ? 'border-streak text-streak hover:bg-streak hover:text-white animate-pulse'
-                        : 'border-muted-foreground/30 group-hover:border-primary group-hover:text-primary'
+                        ? 'bg-streak/5 border-streak/50 shadow-lg streak-glow'
+                        : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
                       }`}
                   >
-                    {task.completed ? <Check className="w-5 h-5 text-white" /> : isSaver && <Flame className="w-5 h-5" />}
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <p className={`font-bold text-lg ${task.completed ? 'line-through decoration-success/50 text-muted-foreground' : 'text-foreground'
-                        }`}>
-                        {task.title}
-                      </p>
-                      {task.completed && (
-                        <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
-                          <Check className="w-3 h-3" /> Done
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md border ${categoryColors[task.category]}`}>
-                        {task.category}
-                      </span>
-
-                      <div className={`flex items-center gap-1.5 text-xs font-medium ${isSaver ? 'text-streak' : 'text-muted-foreground'
-                        }`}>
-                        <Clock className="w-3.5 h-3.5" />
-                        {task.time}
+                    {isSaver && (
+                      <div className="absolute -top-3 -right-3 bg-streak text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg animate-bounce flex items-center gap-1">
+                        <Flame className="w-3 h-3" />
+                        Streak Saver
                       </div>
+                    )}
 
-                      <div className="flex items-center gap-1 text-xs font-bold text-xp">
-                        <Zap className="w-3.5 h-3.5" />
-                        +{task.xp} XP
+                    <button
+                      onClick={() => !task.isCompletedToday && handleCompleteTask(task.id)}
+                      disabled={task.isCompletedToday || isCompleting}
+                      className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${task.isCompletedToday
+                        ? 'bg-success border-success scale-110'
+                        : isSaver
+                          ? 'border-streak text-streak hover:bg-streak hover:text-white animate-pulse'
+                          : 'border-muted-foreground/30 group-hover:border-primary group-hover:text-primary'
+                        } disabled:cursor-not-allowed`}
+                    >
+                      {isCompleting ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : task.isCompletedToday ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : isSaver ? (
+                        <Flame className="w-5 h-5" />
+                      ) : null}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <p className={`font-bold text-lg ${task.isCompletedToday ? 'line-through decoration-success/50 text-muted-foreground' : 'text-foreground'
+                          }`}>
+                          {task.title}
+                        </p>
+                        {task.isCompletedToday && (
+                          <span className="flex items-center gap-1 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                            <Check className="w-3 h-3" /> Done
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md border ${colorClass}`}>
+                          {task.category}
+                        </span>
+
+                        {task.dueDate && (
+                          <div className={`flex items-center gap-1.5 text-xs font-medium ${isSaver ? 'text-streak' : 'text-muted-foreground'
+                            }`}>
+                            <Clock className="w-3.5 h-3.5" />
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1 text-xs font-bold text-xp">
+                          <Zap className="w-3.5 h-3.5" />
+                          +{task.xp} XP
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Right Column - Contextual / Motivation */}
         <div className="space-y-6">
-          {/* Active Goals / Context */}
+          {/* Stats Overview */}
           <div className="bg-card border border-border rounded-3xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-primary/10 rounded-xl text-primary">
                 <Target className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground">Active Goals</h3>
-                <p className="text-xs text-muted-foreground">Track your progress</p>
+                <h3 className="font-bold text-foreground">Your Stats</h3>
+                <p className="text-xs text-muted-foreground">Keep pushing forward</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10 hover:border-primary/30 transition-colors cursor-pointer group">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-black text-sm">FE</div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm text-foreground">Frontend Mastery</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">75% complete</p>
-                  <div className="h-2 bg-secondary rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-success rounded-full w-3/4 group-hover:w-[78%] transition-all" />
-                  </div>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/10">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-xp" />
+                  <span className="text-sm font-medium text-foreground">Total XP</span>
                 </div>
+                <span className="text-lg font-bold text-xp">{user?.totalXp?.toLocaleString() || 0}</span>
               </div>
 
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-energy/5 border border-energy/10 hover:border-energy/30 transition-colors cursor-pointer group">
-                <div className="w-12 h-12 rounded-xl bg-energy/20 text-energy flex items-center justify-center font-black text-sm">FIT</div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm text-foreground">Summer Fitness</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">33% complete</p>
-                  <div className="h-2 bg-secondary rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-energy to-streak rounded-full w-1/3 group-hover:w-[36%] transition-all" />
-                  </div>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-streak/5 border border-streak/10">
+                <div className="flex items-center gap-3">
+                  <Flame className="w-5 h-5 text-streak" />
+                  <span className="text-sm font-medium text-foreground">Current Streak</span>
                 </div>
+                <span className="text-lg font-bold text-streak">{user?.currentStreak || 0} days</span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-success/5 border border-success/10">
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-5 h-5 text-success" />
+                  <span className="text-sm font-medium text-foreground">Longest Streak</span>
+                </div>
+                <span className="text-lg font-bold text-success">{user?.longestStreak || 0} days</span>
               </div>
             </div>
-
-            <button className="w-full mt-6 py-4 border-2 border-dashed border-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary transition-all">
-              + Add New Goal
-            </button>
           </div>
 
           {/* Daily Motivation */}
