@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Image, Trophy, Flame, CheckSquare } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Image, Trophy, Flame, Zap, Crosshair } from 'lucide-react';
 import FriendList from '../components/social/FriendList';
 import SquadList from '../components/social/SquadList';
 import DMWindow from '../components/social/DMWindow';
@@ -11,29 +11,29 @@ const feedPosts = [
   {
     id: 1,
     user: { name: 'Sarah Johnson', avatar: 'SJ', streak: 45 },
-    time: '2 hours ago',
+    time: '2H AGO',
     type: 'streak',
     streakDays: 45,
-    content: "Just hit my 45-day streak! 🎉 Consistency really is key. Started with just 5 minutes of meditation daily and now it's a non-negotiable part of my routine.",
+    content: "Just hit my 45-day streak! 💀 Consistency is the only weapon.",
     likes: 124,
     comments: 18,
   },
   {
     id: 2,
     user: { name: 'Mike Chen', avatar: 'MC', streak: 28 },
-    time: '5 hours ago',
+    time: '5H AGO',
     type: 'achievement',
-    content: "Week 4 of my fitness journey complete! Lost 5 lbs and feeling stronger every day. The Streaks app has been a game changer for accountability.",
+    content: "Week 4 complete. No days off. No excuses.",
     likes: 89,
     comments: 12,
   },
   {
     id: 3,
     user: { name: 'Emma Rodriguez', avatar: 'ER', streak: 67 },
-    time: '8 hours ago',
+    time: '8H AGO',
     type: 'badge',
     badgeName: 'Bookworm Badge',
-    content: "Earned my Bookworm badge! 📚 50 books read this year. Reading has transformed my mornings completely.",
+    content: "Earned the Scholar badge. Knowledge is power.",
     likes: 156,
     comments: 23,
   },
@@ -70,24 +70,24 @@ export default function SocialFeedPage() {
         {/* Verification Alert Button */}
         <button
           onClick={handleShowVerification}
-          className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${showVerification
-            ? 'bg-primary text-primary-foreground border-primary'
-            : 'bg-card border-border hover:border-primary/50'
+          className={`group w-full flex items-center justify-between p-4 rounded-xl border transition-all ${showVerification
+            ? 'bg-red-600 text-white border-red-500'
+            : 'bg-card border-border hover:border-red-500/50 hover:bg-red-500/5'
             }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${showVerification ? 'bg-primary-foreground/20' : 'bg-primary/10'}`}>
-              <CheckSquare className="w-5 h-5" />
+            <div className={`p-2 rounded-lg ${showVerification ? 'bg-white/20' : 'bg-red-500/10 text-red-500'}`}>
+              <Crosshair className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-semibold">Verify Claims</p>
-              <p className={`text-xs ${showVerification ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>2 pending tasks</p>
+              <p className="font-bold uppercase tracking-wide text-sm">Verify Claims</p>
+              <p className={`text-[10px] font-mono ${showVerification ? 'text-white/80' : 'text-muted-foreground'}`}>2 PENDING TARGETS</p>
             </div>
           </div>
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse group-hover:scale-150 transition-transform" />
         </button>
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 text-sm">
           <FriendList
             onSelectFriend={handleSelectFriend}
             selectedFriendId={selectedFriend?.id}
@@ -141,32 +141,28 @@ export default function SocialFeedPage() {
               {/* Create Post */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold flex-shrink-0">
+                  <div className="w-10 h-10 rounded-sm bg-primary flex items-center justify-center text-primary-foreground font-black flex-shrink-0">
                     JD
                   </div>
                   <div className="flex-1">
                     <textarea
-                      placeholder="Share your progress..."
+                      placeholder="Broadcast your victory..."
                       value={newPost}
                       onChange={(e) => setNewPost(e.target.value)}
-                      className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[60px]"
+                      className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[60px] font-medium"
                     />
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                       <div className="flex gap-2">
-                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-sm hover:bg-secondary/80 transition-colors">
-                          <Image className="w-4 h-4" />
-                          Photo
-                        </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-sm hover:bg-secondary/80 transition-colors">
-                          <Trophy className="w-4 h-4" />
-                          Achievement
+                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary text-secondary-foreground text-xs font-bold uppercase hover:bg-secondary/80 transition-colors">
+                          <Image className="w-3 h-3" />
+                          Evidence
                         </button>
                       </div>
                       <button
                         disabled={!newPost.trim()}
-                        className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-6 py-1.5 bg-foreground text-background rounded-sm text-xs font-black uppercase hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors tracking-wide"
                       >
-                        Post
+                        Broadcast
                       </button>
                     </div>
                   </div>
@@ -175,56 +171,76 @@ export default function SocialFeedPage() {
 
               {/* Feed Posts */}
               {feedPosts.map((post) => (
-                <div key={post.id} className="bg-card border border-border rounded-xl p-4">
+                <div key={post.id} className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-colors">
                   {/* Post Header */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 rounded-sm bg-secondary flex items-center justify-center text-foreground font-black border border-border">
                       {post.user.avatar}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">{post.user.name}</span>
-                        <span className="flex items-center gap-1 text-xs text-orange-500">
-                          <Flame className="w-3.5 h-3.5" />
+                        <span className="font-bold text-foreground text-lg">{post.user.name}</span>
+                        {post.user.streak > 30 && (
+                          <span className="px-1.5 py-0.5 bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-wider rounded-sm border border-orange-500/20">
+                            Elite
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                        <span>{post.time}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-orange-500">
+                          <Flame className="w-3 h-3" />
                           {post.user.streak}
                         </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{post.time}</span>
                     </div>
                   </div>
 
-                  {/* Streak Banner */}
+                  {/* Streak Banner - Kill Streak Style */}
                   {post.type === 'streak' && post.streakDays && (
-                    <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 rounded-lg p-3 mb-3 flex items-center gap-2">
-                      <Flame className="w-5 h-5 text-orange-500" />
-                      <span className="font-medium text-foreground">{post.streakDays} Day Streak</span>
+                    <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-red-600 rounded-sm p-4 mb-4 text-white shadow-lg">
+                      <div className="absolute inset-0 bg-noise opacity-20" />
+                      <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-black/20 rounded-full">
+                            <Zap className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] uppercase font-black tracking-widest opacity-80">Streak Extended</div>
+                            <div className="text-xl font-black uppercase italic tracking-tighter">{post.streakDays} DAY KILL STREAK</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
                   {/* Badge Banner */}
                   {post.type === 'badge' && post.badgeName && (
-                    <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 mb-3 flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-purple-500" />
-                      <span className="font-medium text-foreground">{post.badgeName}</span>
+                    <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border border-purple-500/30 rounded-sm p-4 mb-4 flex items-center gap-3">
+                      <Trophy className="w-6 h-6 text-purple-400" />
+                      <div>
+                        <div className="text-[10px] uppercase font-black tracking-widest text-purple-300">New Achievement</div>
+                        <div className="text-white font-bold">{post.badgeName}</div>
+                      </div>
                     </div>
                   )}
 
                   {/* Content */}
-                  <p className="text-foreground leading-relaxed">{post.content}</p>
+                  <p className="text-foreground/90 leading-relaxed font-medium">{post.content}</p>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-6 mt-4 pt-3 border-t border-border">
+                  <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border">
                     <button className="flex items-center gap-2 text-muted-foreground hover:text-red-500 transition-colors">
                       <Heart className="w-5 h-5" />
-                      <span className="text-sm">{post.likes}</span>
+                      <span className="text-xs font-mono font-bold">{post.likes}</span>
                     </button>
                     <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                       <MessageCircle className="w-5 h-5" />
-                      <span className="text-sm">{post.comments}</span>
+                      <span className="text-xs font-mono font-bold">{post.comments}</span>
                     </button>
-                    <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                    <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto">
                       <Share2 className="w-5 h-5" />
-                      <span className="text-sm">Share</span>
                     </button>
                   </div>
                 </div>
