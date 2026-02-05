@@ -1,6 +1,7 @@
 
-import { Users, Plus, Settings } from 'lucide-react';
-import { Squad, mockSquads } from '../../data/mockSocial';
+import { Users, Plus } from 'lucide-react';
+import type { Squad } from '../../data/mockSocial';
+import { mockSquads } from '../../data/mockSocial';
 
 interface SquadListProps {
     onSelectSquad: (squad: Squad) => void;
@@ -23,8 +24,8 @@ export default function SquadList({ onSelectSquad, selectedSquadId }: SquadListP
                         key={squad.id}
                         onClick={() => onSelectSquad(squad)}
                         className={`w-full text-left p-3 rounded-lg border transition-colors ${selectedSquadId === squad.id
-                                ? 'bg-primary/10 border-primary'
-                                : 'bg-background border-border hover:border-primary/50'
+                            ? 'bg-primary/10 border-primary'
+                            : 'bg-background border-border hover:border-primary/50'
                             }`}
                     >
                         <div className="flex items-center justify-between mb-2">
