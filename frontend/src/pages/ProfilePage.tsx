@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Zap, Star, TrendingUp, Award } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Zap, Star, TrendingUp, Award, Camera, X, Upload } from 'lucide-react';
 
 // Mock data
 const userData = {
@@ -7,6 +8,7 @@ const userData = {
   username: '@johndoe',
   bio: 'Building better habits, one day at a time. Fitness enthusiast and lifelong learner.',
   avatar: 'JD',
+  avatarUrl: null as string | null, // Will hold the uploaded image URL
   stats: {
     score: 9500,
     streak: 12,
@@ -33,10 +35,132 @@ const achievements = [
 ];
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'activity' | 'achievements'>('activity');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(userData.avatarUrl);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image must be less than 5MB');
+        return;
+      }
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewUrl(reader.result as string);
+        setShowUploadModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!previewUrl) return;
+
+    setIsUploading(true);
+    // Simulate upload delay - replace with actual upload logic
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Set the new avatar URL (in real app, this would come from the server)
+    setAvatarUrl(previewUrl);
+    setIsUploading(false);
+    setShowUploadModal(false);
+    setPreviewUrl(null);
+  };
+
+  const handleCancelUpload = () => {
+    setShowUploadModal(false);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-8">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-foreground">Update Profile Picture</h3>
+              <button
+                onClick={handleCancelUpload}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Preview */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-40 h-40 rounded-2xl overflow-hidden border-4 border-primary/20">
+                  {previewUrl && (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              This is how your profile picture will appear to others.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelUpload}
+                className="flex-1 px-4 py-3 border border-border rounded-xl font-bold text-foreground hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Save Photo
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Identity Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-border p-8 lg:p-10 shadow-2xl">
         <div className="absolute inset-0 bg-noise opacity-10 pointer-events-none" />
@@ -44,11 +168,28 @@ export default function ProfilePage() {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-streak/10 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
-          {/* Avatar with Level Ring */}
-          <div className="relative">
-            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl bg-gradient-to-br from-primary to-success flex items-center justify-center text-white text-4xl font-black shadow-xl">
-              {userData.avatar}
+          {/* Avatar with Upload Button */}
+          <div className="relative group">
+            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-success flex items-center justify-center text-white text-4xl font-black shadow-xl">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                userData.avatar
+              )}
             </div>
+
+            {/* Camera overlay button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+            >
+              <div className="flex flex-col items-center gap-1 text-white">
+                <Camera className="w-6 h-6" />
+                <span className="text-xs font-bold">Change</span>
+              </div>
+            </button>
+
+            {/* Level badge */}
             <div className="absolute -bottom-2 -right-2 bg-achievement text-achievement-foreground px-3 py-1 rounded-full text-sm font-black shadow-lg flex items-center gap-1">
               <Star className="w-3 h-3" />
               LVL {userData.level}
@@ -82,11 +223,17 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex gap-3 flex-wrap">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+              >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
               </button>
-              <button className="flex items-center gap-2 px-5 py-2.5 border border-border bg-secondary/50 text-foreground rounded-xl font-bold hover:bg-secondary transition-all">
+              <button
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2 px-5 py-2.5 border border-border bg-secondary/50 text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
+              >
                 <Settings className="w-4 h-4" />
                 Settings
               </button>
