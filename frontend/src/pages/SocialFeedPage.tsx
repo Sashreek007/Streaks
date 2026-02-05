@@ -71,8 +71,8 @@ export default function SocialFeedPage() {
         <button
           onClick={handleShowVerification}
           className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${showVerification
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-card border-border hover:border-primary/50'
+            ? 'bg-primary text-primary-foreground border-primary'
+            : 'bg-card border-border hover:border-primary/50'
             }`}
         >
           <div className="flex items-center gap-3">
@@ -122,10 +122,19 @@ export default function SocialFeedPage() {
           </div>
         ) : (
           <div className="max-w-2xl mx-auto h-full flex flex-col">
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Social Hub</h1>
-              <p className="text-muted-foreground mt-1">Connect, compete, and verify progress</p>
+            {/* Competitive Header */}
+            <div className="mb-6 flex items-end justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-red-500 font-bold uppercase tracking-widest text-xs mb-1">
+                  <Flame className="w-4 h-4 animate-pulse" />
+                  Heads Up
+                </div>
+                <h1 className="text-2xl lg:text-3xl font-black text-foreground">Trailing Behind Sarah</h1>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium text-muted-foreground">Global Rank</div>
+                <div className="text-2xl font-black text-foreground">#4,201</div>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-4 -mr-4 space-y-6">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Users, Globe, Flame } from 'lucide-react';
+import { Plus, Search, Users, Globe, Flame, Trophy, ArrowUpRight } from 'lucide-react';
 
 // Mock data - Public communities
 const communities = [
@@ -12,6 +12,7 @@ const communities = [
     streak: 32,
     joined: true,
     category: 'Fitness',
+    color: 'from-orange-500 to-red-500',
   },
   {
     id: 2,
@@ -22,6 +23,7 @@ const communities = [
     streak: 15,
     joined: true,
     category: 'Learning',
+    color: 'from-blue-500 to-indigo-500',
   },
   {
     id: 3,
@@ -32,6 +34,7 @@ const communities = [
     streak: 67,
     joined: false,
     category: 'Wellness',
+    color: 'from-teal-500 to-emerald-500',
   },
   {
     id: 4,
@@ -42,6 +45,7 @@ const communities = [
     streak: 120,
     joined: false,
     category: 'Career',
+    color: 'from-purple-500 to-pink-500',
   },
   {
     id: 5,
@@ -52,6 +56,7 @@ const communities = [
     streak: 89,
     joined: false,
     category: 'Learning',
+    color: 'from-blue-400 to-cyan-400',
   },
   {
     id: 6,
@@ -62,148 +67,122 @@ const communities = [
     streak: 45,
     joined: false,
     category: 'Health',
+    color: 'from-green-500 to-lime-500',
   },
 ];
 
-const categories = ['All', 'Fitness', 'Learning', 'Wellness', 'Career', 'Health'];
-
-const categoryColors: Record<string, string> = {
-  Fitness: 'bg-green-500/10 text-green-500',
-  Learning: 'bg-blue-500/10 text-blue-500',
-  Wellness: 'bg-pink-500/10 text-pink-500',
-  Career: 'bg-purple-500/10 text-purple-500',
-  Health: 'bg-orange-500/10 text-orange-500',
-};
-
 export default function CommunitiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [filter, setFilter] = useState<'all' | 'joined' | 'discover'>('all');
 
   const filteredCommunities = communities.filter(community => {
     if (searchQuery && !community.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (selectedCategory !== 'All' && community.category !== selectedCategory) return false;
     if (filter === 'joined') return community.joined;
     if (filter === 'discover') return !community.joined;
     return true;
   });
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-8">
+      {/* Hero Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Communities</h1>
-          <p className="text-muted-foreground mt-1">Join public communities and compete with others worldwide</p>
+          <div className="flex items-center gap-2 text-primary font-bold tracking-wider uppercase text-sm mb-2">
+            <Globe className="w-4 h-4" />
+            Global Leaderboards
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-foreground tracking-tight">Communities</h1>
+          <p className="text-muted-foreground mt-2 max-w-xl text-lg">
+            Join forces with others. Compete for the weekly multiplier badge.
+          </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus className="w-4 h-4" />
-          Create Community
+        <button className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl font-bold transition-colors">
+          <Plus className="w-5 h-5" />
+          Create Squad
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Search communities..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+      {/* Filter Bar */}
+      <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl p-2 -mx-2 rounded-2xl border border-border/50 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Find your tribe..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl">
+            {(['all', 'joined', 'discover'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${filter === tab ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                {tab === 'all' ? 'All' : tab}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Category Pills */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-        {categories.map((category) => (
-          <button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedCategory === category
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-border">
-        {(['all', 'joined', 'discover'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            className={`pb-3 text-sm font-medium capitalize transition-colors ${
-              filter === tab
-                ? 'text-foreground border-b-2 border-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab === 'all' ? 'All Communities' : tab === 'joined' ? 'My Communities' : 'Discover'}
-          </button>
-        ))}
-      </div>
-
-      {/* Communities Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredCommunities.map((community) => (
           <div
             key={community.id}
-            className="bg-card border border-border rounded-xl p-5 hover:border-primary/50 transition-colors"
+            className="group relative h-[280px] rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground truncate">{community.name}</h3>
-                  <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColors[community.category]}`}>
+            {/* Background Gradient Image */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${community.color} opacity-80 transition-opacity group-hover:opacity-100`} />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+
+            {/* Content Overlay */}
+            <div className="absolute inset-0 p-6 flex flex-col items-start justify-between text-white">
+              <div className="w-full">
+                <div className="flex items-start justify-between">
+                  <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-medium border border-white/10">
                     {community.category}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Users className="w-3.5 h-3.5" />
-                    {community.members.toLocaleString()}
-                  </span>
+                  {community.joined && (
+                    <span className="w-8 h-8 flex items-center justify-center bg-white text-black rounded-full shadow-lg">
+                      <Trophy className="w-4 h-4" />
+                    </span>
+                  )}
                 </div>
-              </div>
-            </div>
 
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{community.description}</p>
-
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1 text-sm">
-                  <span className="text-primary font-medium">{community.multiplier}x</span>
-                </span>
-                <span className="flex items-center gap-1 text-sm text-orange-500">
-                  <Flame className="w-4 h-4" />
-                  {community.streak}
-                </span>
+                <h3 className="text-2xl font-bold mt-4 mb-2">{community.name}</h3>
+                <p className="text-white/80 text-sm line-clamp-2">{community.description}</p>
               </div>
-              <button
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  community.joined
-                    ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                }`}
-              >
-                {community.joined ? 'Joined' : 'Join'}
-              </button>
+
+              <div className="w-full pt-4 border-t border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4 opacity-70" />
+                    <span className="font-medium text-sm">{(community.members / 1000).toFixed(1)}k</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 opacity-70" />
+                    <span className="font-medium text-sm">{community.multiplier}x</span>
+                  </div>
+                </div>
+
+                <button className={`p-2 rounded-full transition-transform group-hover:rotate-45 ${community.joined ? 'bg-white/20' : 'bg-white text-black'
+                  }`}>
+                  <ArrowUpRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
-
-      {filteredCommunities.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No communities found</p>
-        </div>
-      )}
     </div>
   );
 }

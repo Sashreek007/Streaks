@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, UserPlus, UserCheck, UserX, Flame, MessageCircle, MoreVertical, Check, X } from 'lucide-react';
+import { Search, UserPlus, UserCheck, Flame, MessageCircle, MoreVertical, Check, X } from 'lucide-react';
 
 // Mock data
 const friends = [
@@ -59,21 +59,19 @@ export default function FriendsPage() {
       <div className="flex gap-4 mb-6 border-b border-border">
         <button
           onClick={() => setActiveTab('friends')}
-          className={`pb-3 text-sm font-medium transition-colors ${
-            activeTab === 'friends'
+          className={`pb-3 text-sm font-medium transition-colors ${activeTab === 'friends'
               ? 'text-foreground border-b-2 border-primary'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           My Friends ({friends.length})
         </button>
         <button
           onClick={() => setActiveTab('requests')}
-          className={`pb-3 text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeTab === 'requests'
+          className={`pb-3 text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === 'requests'
               ? 'text-foreground border-b-2 border-primary'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           Requests
           {friendRequests.length > 0 && (
@@ -84,11 +82,10 @@ export default function FriendsPage() {
         </button>
         <button
           onClick={() => setActiveTab('discover')}
-          className={`pb-3 text-sm font-medium transition-colors ${
-            activeTab === 'discover'
+          className={`pb-3 text-sm font-medium transition-colors ${activeTab === 'discover'
               ? 'text-foreground border-b-2 border-primary'
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           Discover
         </button>
@@ -111,9 +108,8 @@ export default function FriendsPage() {
                   <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
                     {friend.avatar}
                   </div>
-                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${
-                    friend.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'
-                  }`} />
+                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${friend.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'
+                    }`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
