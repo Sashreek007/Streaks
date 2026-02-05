@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import SocialFeedPage from './pages/SocialFeedPage';
-import GroupsPage from './pages/GroupsPage';
+import CommunitiesPage from './pages/CommunitiesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AppLayout from './components/AppLayout';
@@ -33,9 +33,9 @@ function App() {
               <SocialFeedPage />
             </AppLayout>
           } />
-          <Route path="/groups" element={
+          <Route path="/communities" element={
             <AppLayout>
-              <GroupsPage />
+              <CommunitiesPage />
             </AppLayout>
           } />
           <Route path="/leaderboard" element={
