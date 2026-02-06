@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   Moon,
@@ -18,6 +19,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ToggleProps {
   enabled: boolean;
@@ -40,7 +42,14 @@ function Toggle({ enabled, onChange }: ToggleProps) {
 }
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   // Notification settings
   const [notifications, setNotifications] = useState({
@@ -355,7 +364,10 @@ export default function SettingsPage() {
         </div>
 
         <div className="divide-y divide-border">
-          <button className="w-full p-4 flex items-center justify-between hover:bg-energy/5 transition-colors text-left group">
+          <button
+            onClick={handleLogout}
+            className="w-full p-4 flex items-center justify-between hover:bg-energy/5 transition-colors text-left group"
+          >
             <div>
               <p className="font-medium text-foreground group-hover:text-energy transition-colors">Log Out</p>
               <p className="text-sm text-muted-foreground">Sign out of your account</p>

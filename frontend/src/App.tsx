@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, RequireAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import SocialFeedPage from './pages/SocialFeedPage';
@@ -20,6 +21,7 @@ function App() {
           <Routes>
             {/* Auth routes */}
             <Route path="/" element={<LoginPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
             {/* Protected routes with layout */}
             <Route path="/dashboard" element={
