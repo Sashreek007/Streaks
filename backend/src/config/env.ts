@@ -23,6 +23,17 @@ export const env = {
   // Frontend
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 
+  // API URL (for OAuth callbacks)
+  apiUrl: process.env.API_URL || 'http://localhost:3000',
+
+  // Google OAuth
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+
+  // GitHub OAuth
+  githubClientId: process.env.GITHUB_CLIENT_ID,
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
+
   // Encryption
   encryptionKey: process.env.ENCRYPTION_KEY!,
 };

@@ -2,8 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import passport from 'passport';
 import { env } from './config/env.js';
 import { apiLimiter } from './middleware/rateLimit.js';
+
+// Import passport config (to register strategies)
+import './config/passport.js';
 
 // Route imports
 import authRoutes from './routes/auth.js';
@@ -16,6 +20,7 @@ import communityRoutes from './routes/communities.js';
 import feedRoutes from './routes/feed.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import verificationRoutes from './routes/verification.js';
+import oauthRoutes from './routes/oauth.js';
 
 const app = express();
 
@@ -36,6 +41,9 @@ app.use(cookieParser());
 // Rate limiting
 app.use('/api', apiLimiter);
 
+// Initialize Passport
+app.use(passport.initialize());
+
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -52,6 +60,7 @@ app.use('/api/communities', communityRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/oauth', oauthRoutes);
 
 // 404 handler
 app.use((_req, res) => {

@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -10,6 +10,7 @@ import {
   Trophy,
   UserPlus
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 
 const navigation = [
@@ -32,6 +33,14 @@ const mobileNavigation = [
 ];
 
 export default function AppSidebar() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <>
       {/* Desktop Sidebar - Hidden on mobile */}
@@ -85,8 +94,16 @@ export default function AppSidebar() {
               Settings
             </div>
           </NavLink>
-          <button className="flex items-center justify-center p-3 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-colors">
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="relative group flex items-center justify-center p-3 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-colors"
+          >
             <LogOut className="w-6 h-6" />
+            {/* Tooltip */}
+            <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-popover-foreground text-xs font-medium rounded-lg opacity-0 -translate-x-2 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all whitespace-nowrap border border-border shadow-lg z-50">
+              Log out
+            </div>
           </button>
         </div>
       </div>

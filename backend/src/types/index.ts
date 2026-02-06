@@ -1,12 +1,9 @@
 import type { Request } from 'express';
+import type { User } from '@prisma/client';
 
 // Extend Express Request with user
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    username: string;
-  };
+  user?: User;
 }
 
 // API Response types

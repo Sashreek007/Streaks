@@ -33,7 +33,6 @@ export async function authenticate(
     // Check if user still exists
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, email: true, username: true },
     });
 
     if (!user) {
@@ -42,11 +41,7 @@ export async function authenticate(
     }
 
     // Attach user to request
-    req.user = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    };
+    req.user = user;
 
     next();
   } catch (error) {
@@ -78,7 +73,6 @@ export async function optionalAuth(
       const decoded = jwt.verify(token, env.jwtSecret) as JwtPayload;
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, email: true, username: true },
       });
 
       if (user) {
