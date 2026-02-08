@@ -191,6 +191,9 @@ model Message {
   content        String
   messageType    String       @default("text") @map("message_type") // 'text', 'image', 'system'
   imageUrl       String?      @map("image_url")
+  replyToId      String?      @map("reply_to_id")
+  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]    @relation("MessageReplies")
   createdAt      DateTime     @default(now()) @map("created_at")
   editedAt       DateTime?    @map("edited_at")
   deletedAt      DateTime?    @map("deleted_at")

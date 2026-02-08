@@ -106,7 +106,7 @@ router.get('/search', authenticate, async (req: AuthenticatedRequest, res, next)
 // GET /api/users/check-username/:username - Check if username is available
 router.get('/check-username/:username', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const username = req.params.username.toLowerCase();
+    const username = (req.params.username as string).toLowerCase();
 
     // Validate username format
     if (!/^[a-z0-9_]+$/.test(username) || username.length < 3 || username.length > 30) {
