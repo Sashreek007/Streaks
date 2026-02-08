@@ -90,13 +90,11 @@ export default function DMWindow({ friend }: DMWindowProps) {
     if (res.success) {
       setMessages(prev => prev.filter(m => m.id !== messageId));
     }
-    setShowMessageMenu(null);
   };
 
   const handleStartEdit = (msg: ExtendedMessage) => {
     setEditingMessage(msg);
     setEditText(msg.content);
-    setShowMessageMenu(null);
   };
 
   const handleSaveEdit = async () => {
@@ -114,7 +112,6 @@ export default function DMWindow({ friend }: DMWindowProps) {
 
   const handleReply = (msg: ExtendedMessage) => {
     setReplyingTo(msg);
-    setShowMessageMenu(null);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
