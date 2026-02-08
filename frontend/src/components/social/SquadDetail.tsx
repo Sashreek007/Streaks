@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Copy, RefreshCw, Crown, Shield, UserMinus, ArrowLeft, Loader2, Check, Flame, X } from 'lucide-react';
+import { UserPlus, Copy, RefreshCw, Crown, Shield, UserMinus, ArrowLeft, Loader2, Check, Flame, X } from 'lucide-react';
 import { squadsApi, friendsApi, type Squad, type Friend } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 

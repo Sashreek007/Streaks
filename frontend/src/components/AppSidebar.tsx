@@ -8,8 +8,7 @@ import {
   LogOut,
   Flame,
   Trophy,
-  UserPlus,
-  Search
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UserSearch from './UserSearch';

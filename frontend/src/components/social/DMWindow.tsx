@@ -22,12 +22,11 @@ export default function DMWindow({ friend }: DMWindowProps) {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [, setConversationId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<ExtendedMessage | null>(null);
   const [editingMessage, setEditingMessage] = useState<ExtendedMessage | null>(null);
   const [editText, setEditText] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
