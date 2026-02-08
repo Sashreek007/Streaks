@@ -260,4 +260,185 @@ router.post('/:conversationId/read', authenticate, async (req: AuthenticatedRequ
   }
 });
 
+// DELETE /api/messages/message/:messageId - Delete a message
+router.delete('/message/:messageId', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const messageId = req.params.messageId as string;
+    const userId = req.user!.id;
+
+    // Find the message and verify ownership
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      res.status(404).json({ success: false, error: 'Message not found' });
+      return;
+    }
+
+    if (message.senderId !== userId) {
+      res.status(403).json({ success: false, error: 'You can only delete your own messages' });
+      return;
+    }
+
+    // Soft delete the message
+    await prisma.message.update({
+      where: { id: messageId },
+      data: { deletedAt: new Date() },
+    });
+
+    res.json({ success: true, message: 'Message deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/messages/message/:messageId - Edit a message
+router.patch(
+  '/message/:messageId',
+  authenticate,
+  validate(z.object({ content: z.string().min(1).max(2000) })),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const messageId = req.params.messageId as string;
+      const userId = req.user!.id;
+      const { content } = req.body;
+
+      // Find the message and verify ownership
+      const message = await prisma.message.findUnique({
+        where: { id: messageId },
+      });
+
+      if (!message) {
+        res.status(404).json({ success: false, error: 'Message not found' });
+        return;
+      }
+
+      if (message.senderId !== userId) {
+        res.status(403).json({ success: false, error: 'You can only edit your own messages' });
+        return;
+      }
+
+      // Check if message is too old to edit (e.g., 15 minutes)
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      if (message.createdAt < fifteenMinutesAgo) {
+        res.status(400).json({ success: false, error: 'Message is too old to edit' });
+        return;
+      }
+
+      // Update the message
+      const updatedMessage = await prisma.message.update({
+        where: { id: messageId },
+        data: {
+          content,
+          editedAt: new Date(),
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+      res.json({ success: true, data: updatedMessage });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /api/messages/reply/:messageId - Reply to a message
+router.post(
+  '/reply/:messageId',
+  authenticate,
+  validate(sendMessageSchema),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const replyToId = req.params.messageId as string;
+      const { content, imageUrl } = req.body;
+      const userId = req.user!.id;
+
+      // Find the original message
+      const originalMessage = await prisma.message.findUnique({
+        where: { id: replyToId },
+        include: {
+          conversation: {
+            include: {
+              participants: true,
+            },
+          },
+        },
+      });
+
+      if (!originalMessage) {
+        res.status(404).json({ success: false, error: 'Original message not found' });
+        return;
+      }
+
+      // Verify user is participant in the conversation
+      const isParticipant = originalMessage.conversation.participants.some(p => p.userId === userId);
+      if (!isParticipant) {
+        res.status(403).json({ success: false, error: 'Not a participant in this conversation' });
+        return;
+      }
+
+      // Create the reply message
+      const message = await prisma.message.create({
+        data: {
+          conversationId: originalMessage.conversationId,
+          senderId: userId,
+          content,
+          imageUrl,
+          messageType: imageUrl ? 'image' : 'text',
+          replyToId,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+          replyTo: {
+            select: {
+              id: true,
+              content: true,
+              senderId: true,
+              sender: {
+                select: {
+                  id: true,
+                  displayName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Update conversation timestamp
+      await prisma.conversation.update({
+        where: { id: originalMessage.conversationId },
+        data: { updatedAt: new Date() },
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          message,
+          conversationId: originalMessage.conversationId,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

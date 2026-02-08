@@ -1,47 +1,73 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Zap, Star, TrendingUp, Award, Camera, X, Upload } from 'lucide-react';
+import { Settings, Edit2, Flame, Trophy, CheckCircle2, Users, Zap, Star, TrendingUp, Award, Camera, X, Upload, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { usersApi, type TaskCompletion } from '../services/api';
 
-// Mock data
-const userData = {
-  name: 'John Doe',
-  username: '@johndoe',
-  bio: 'Building better habits, one day at a time. Fitness enthusiast and lifelong learner.',
-  avatar: 'JD',
-  avatarUrl: null as string | null, // Will hold the uploaded image URL
-  stats: {
-    score: 9500,
-    streak: 12,
-    tasksCompleted: 156,
-    groups: 4,
-  },
-  level: 24,
-  xpProgress: 65,
-  joinedDate: 'January 2024',
+// Achievement type from API
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earnedAt: string;
+}
+
+// Map icon names to Lucide components
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  flame: Flame,
+  users: Users,
+  check: CheckCircle2,
+  trophy: Trophy,
+  star: Star,
+  zap: Zap,
 };
 
-const recentActivity = [
-  { id: 1, type: 'task', title: 'Completed morning workout', time: '2H AGO', points: 50 },
-  { id: 2, type: 'streak', title: 'Reached 12-day streak!', time: '1D AGO', points: 100 },
-  { id: 3, type: 'task', title: 'Read for 30 minutes', time: '1D AGO', points: 30 },
-  { id: 4, type: 'badge', title: 'Earned Early Bird badge', time: '3D AGO', points: 200 },
-];
-
-const achievements = [
-  { id: 1, name: 'First Streak', description: '7 days in a row', icon: Flame, earned: true, color: 'streak' },
-  { id: 2, name: 'Team Player', description: 'Join 3 groups', icon: Users, earned: true, color: 'primary' },
-  { id: 3, name: 'Century', description: 'Complete 100 tasks', icon: CheckCircle2, earned: true, color: 'success' },
-  { id: 4, name: 'Champion', description: 'Reach top 10', icon: Trophy, earned: false, color: 'achievement' },
-];
+function getIconComponent(iconName: string) {
+  return iconMap[iconName.toLowerCase()] || Trophy;
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'activity' | 'achievements'>('activity');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(userData.avatarUrl);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // API data states
+  const [activity, setActivity] = useState<TaskCompletion[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch activity and achievements
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return;
+
+      setLoading(true);
+      try {
+        const [activityRes, achievementsRes] = await Promise.all([
+          usersApi.getActivity(user.id, 10),
+          usersApi.getAchievements(user.id),
+        ]);
+
+        if (activityRes.success && activityRes.data) {
+          setActivity(activityRes.data);
+        }
+        if (achievementsRes.success && achievementsRes.data) {
+          setAchievements(achievementsRes.data as unknown as Achievement[]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [user]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,11 +96,15 @@ export default function ProfilePage() {
     if (!previewUrl) return;
 
     setIsUploading(true);
-    // Simulate upload delay - replace with actual upload logic
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Set the new avatar URL (in real app, this would come from the server)
-    setAvatarUrl(previewUrl);
+    // Update profile with the new avatar URL (base64 for now)
+    // In a production app, you would upload to a storage service first
+    const res = await usersApi.updateProfile({ avatarUrl: previewUrl });
+
+    if (res.success) {
+      await refreshUser();
+    }
+
     setIsUploading(false);
     setShowUploadModal(false);
     setPreviewUrl(null);
@@ -87,6 +117,49 @@ export default function ProfilePage() {
       fileInputRef.current.value = '';
     }
   };
+
+  // Get initials from display name
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  // Calculate XP progress to next level (using a simple formula)
+  const calculateXpProgress = () => {
+    if (!user) return 0;
+    const xpForCurrentLevel = user.level * 1000; // Simplified formula
+    const xpForNextLevel = (user.level + 1) * 1000;
+    const xpInCurrentLevel = user.totalXp - (user.level * (user.level - 1) * 500);
+    const xpNeeded = xpForNextLevel - xpForCurrentLevel;
+    return Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeeded) * 100));
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}M AGO`;
+    if (diffHours < 24) return `${diffHours}H AGO`;
+    return `${diffDays}D AGO`;
+  };
+
+  if (!user) {
+    return (
+      <div className="p-6 lg:p-8 max-w-5xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-8">
@@ -146,7 +219,7 @@ export default function ProfilePage() {
               >
                 {isUploading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Uploading...
                   </>
                 ) : (
@@ -171,10 +244,10 @@ export default function ProfilePage() {
           {/* Avatar with Upload Button */}
           <div className="relative group">
             <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-success flex items-center justify-center text-white text-4xl font-black shadow-xl">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                userData.avatar
+                getInitials(user.displayName)
               )}
             </div>
 
@@ -192,32 +265,39 @@ export default function ProfilePage() {
             {/* Level badge */}
             <div className="absolute -bottom-2 -right-2 bg-achievement text-achievement-foreground px-3 py-1 rounded-full text-sm font-black shadow-lg flex items-center gap-1">
               <Star className="w-3 h-3" />
-              LVL {userData.level}
+              LVL {user.level}
             </div>
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl lg:text-4xl font-black text-foreground tracking-tight">{userData.name}</h1>
+                <h1 className="text-3xl lg:text-4xl font-black text-foreground tracking-tight">{user.displayName}</h1>
                 <div className="px-3 py-1 bg-xp/10 border border-xp/20 text-xp text-xs font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
                   <Award className="w-3 h-3" />
-                  Elite
+                  {user.level >= 20 ? 'Elite' : user.level >= 10 ? 'Veteran' : 'Rising'}
                 </div>
               </div>
-              <p className="text-muted-foreground font-medium text-sm mt-1">{userData.username} • Member since {userData.joinedDate}</p>
+              <p className="text-muted-foreground font-medium text-sm mt-1">
+                @{user.username} • Member since {formatDate(user.createdAt)}
+              </p>
             </div>
+
+            {/* Bio */}
+            {user.bio && (
+              <p className="text-foreground/80 text-sm max-w-lg">{user.bio}</p>
+            )}
 
             {/* XP Progress Bar */}
             <div className="max-w-md">
               <div className="flex items-center justify-between text-xs mb-2">
-                <span className="text-muted-foreground font-medium">Level {userData.level}</span>
-                <span className="text-xp font-bold">{userData.xpProgress}% to Level {userData.level + 1}</span>
+                <span className="text-muted-foreground font-medium">Level {user.level}</span>
+                <span className="text-xp font-bold">{Math.round(calculateXpProgress())}% to Level {user.level + 1}</span>
               </div>
               <div className="h-3 bg-secondary rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-xp via-primary to-success transition-all duration-500"
-                  style={{ width: `${userData.xpProgress}%` }}
+                  style={{ width: `${calculateXpProgress()}%` }}
                 />
               </div>
             </div>
@@ -248,7 +328,9 @@ export default function ProfilePage() {
               <Zap className="w-4 h-4 text-xp" />
               Total XP
             </div>
-            <div className="text-3xl font-black text-foreground group-hover:text-primary transition-colors">{userData.stats.score.toLocaleString()}</div>
+            <div className="text-3xl font-black text-foreground group-hover:text-primary transition-colors">
+              {user.totalXp.toLocaleString()}
+            </div>
           </div>
 
           <div className="bg-streak/10 border border-streak/20 p-5 rounded-2xl hover:border-streak/40 transition-colors group">
@@ -256,23 +338,25 @@ export default function ProfilePage() {
               <Flame className="w-4 h-4 animate-streak-fire" />
               Active Streak
             </div>
-            <div className="text-3xl font-black text-streak">{userData.stats.streak} <span className="text-base opacity-60">days</span></div>
+            <div className="text-3xl font-black text-streak">
+              {user.currentStreak} <span className="text-base opacity-60">days</span>
+            </div>
           </div>
 
           <div className="bg-success/10 border border-success/20 p-5 rounded-2xl hover:border-success/40 transition-colors group">
             <div className="flex items-center gap-2 text-xs text-success uppercase tracking-widest font-bold mb-2">
-              <CheckCircle2 className="w-4 h-4" />
-              Completed
+              <Trophy className="w-4 h-4" />
+              Longest Streak
             </div>
-            <div className="text-3xl font-black text-success">{userData.stats.tasksCompleted}</div>
+            <div className="text-3xl font-black text-success">{user.longestStreak}</div>
           </div>
 
           <div className="bg-primary/10 border border-primary/20 p-5 rounded-2xl hover:border-primary/40 transition-colors group">
             <div className="flex items-center gap-2 text-xs text-primary uppercase tracking-widest font-bold mb-2">
-              <Users className="w-4 h-4" />
-              Squads
+              <Star className="w-4 h-4" />
+              Level
             </div>
-            <div className="text-3xl font-black text-primary">{userData.stats.groups}</div>
+            <div className="text-3xl font-black text-primary">{user.level}</div>
           </div>
         </div>
       </div>
@@ -302,67 +386,72 @@ export default function ProfilePage() {
       </div>
 
       {/* Content */}
-      {activeTab === 'activity' ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : activeTab === 'activity' ? (
         <div className="space-y-4">
-          {recentActivity.map((item) => (
-            <div
-              key={item.id}
-              className="bg-card border border-border p-5 rounded-2xl flex items-center gap-5 group hover:border-primary/30 transition-all hover:shadow-md"
-            >
-              <div className={`w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-colors ${item.type === 'task'
-                ? 'bg-success/10 text-success group-hover:bg-success/20'
-                : item.type === 'streak'
-                  ? 'bg-streak/10 text-streak group-hover:bg-streak/20'
-                  : 'bg-achievement/10 text-achievement group-hover:bg-achievement/20'
-                }`}>
-                {item.type === 'task' && <CheckCircle2 className="w-6 h-6" />}
-                {item.type === 'streak' && <Flame className="w-6 h-6" />}
-                {item.type === 'badge' && <Trophy className="w-6 h-6" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{item.time}</p>
-              </div>
-              <div className="flex items-center gap-1.5 font-bold text-xp bg-xp/10 px-4 py-2 rounded-full text-sm">
-                <Zap className="w-4 h-4" />
-                +{item.points} XP
-              </div>
+          {activity.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No activity yet. Complete some tasks to see your progress!</p>
             </div>
-          ))}
+          ) : (
+            activity.map((item) => (
+              <div
+                key={item.id}
+                className="bg-card border border-border p-5 rounded-2xl flex items-center gap-5 group hover:border-primary/30 transition-all hover:shadow-md"
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-xl font-bold transition-colors bg-success/10 text-success group-hover:bg-success/20">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">
+                    Completed: {item.task?.title || 'Task'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatTimeAgo(item.completedAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 font-bold text-xp bg-xp/10 px-4 py-2 rounded-full text-sm">
+                  <Zap className="w-4 h-4" />
+                  +{item.xpEarned} XP
+                </div>
+              </div>
+            ))
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {achievements.map((achievement) => (
-            <div
-              key={achievement.id}
-              className={`border p-6 rounded-2xl flex items-center gap-5 transition-all ${achievement.earned
-                ? `bg-${achievement.color}/5 border-${achievement.color}/20 hover:border-${achievement.color}/40 hover:shadow-md`
-                : 'bg-muted/10 border-border opacity-50'
-                }`}
-            >
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${achievement.earned
-                ? achievement.color === 'streak'
-                  ? 'bg-streak text-white shadow-lg'
-                  : achievement.color === 'primary'
-                    ? 'bg-primary text-white shadow-lg'
-                    : achievement.color === 'success'
-                      ? 'bg-success text-white shadow-lg'
-                      : 'bg-achievement text-white shadow-lg'
-                : 'bg-muted text-muted-foreground'
-                }`}>
-                <achievement.icon className="w-7 h-7" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-foreground">{achievement.name}</p>
-                  {achievement.earned && (
-                    <CheckCircle2 className="w-4 h-4 text-success" />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{achievement.description}</p>
-              </div>
+          {achievements.length === 0 ? (
+            <div className="col-span-2 text-center py-12">
+              <p className="text-muted-foreground">No achievements earned yet. Keep completing tasks!</p>
             </div>
-          ))}
+          ) : (
+            achievements.map((achievement) => {
+              const IconComponent = getIconComponent(achievement.icon);
+              return (
+                <div
+                  key={achievement.id}
+                  className="bg-primary/5 border border-primary/20 hover:border-primary/40 p-6 rounded-2xl flex items-center gap-5 transition-all hover:shadow-md"
+                >
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-primary text-white shadow-lg">
+                    <IconComponent className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-foreground">{achievement.name}</p>
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{achievement.description}</p>
+                    <p className="text-xs text-primary mt-1">
+                      Earned {formatDate(achievement.earnedAt)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       )}
     </div>

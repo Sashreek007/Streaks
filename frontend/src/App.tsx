@@ -3,12 +3,14 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, RequireAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
+import UsernameSetupPage from './pages/UsernameSetupPage';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import SocialFeedPage from './pages/SocialFeedPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
+import UserProfilePage from './pages/UserProfilePage';
 import FriendsPage from './pages/FriendsPage';
 import SettingsPage from './pages/SettingsPage';
 import AppLayout from './components/AppLayout';
@@ -22,6 +24,11 @@ function App() {
             {/* Auth routes */}
             <Route path="/" element={<LoginPage />} />
             <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+            <Route path="/setup-username" element={
+              <RequireAuth>
+                <UsernameSetupPage />
+              </RequireAuth>
+            } />
 
             {/* Protected routes with layout */}
             <Route path="/dashboard" element={
@@ -70,6 +77,13 @@ function App() {
               <RequireAuth>
                 <AppLayout>
                   <ProfilePage />
+                </AppLayout>
+              </RequireAuth>
+            } />
+            <Route path="/profile/:userId" element={
+              <RequireAuth>
+                <AppLayout>
+                  <UserProfilePage />
                 </AppLayout>
               </RequireAuth>
             } />

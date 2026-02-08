@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -16,22 +16,26 @@ import {
   Flame,
   Users,
   Trophy,
-  LogOut
+  LogOut,
+  Loader2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { usersApi, type UserSettings } from '../services/api';
 
 interface ToggleProps {
   enabled: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }
 
-function Toggle({ enabled, onChange }: ToggleProps) {
+function Toggle({ enabled, onChange, disabled }: ToggleProps) {
   return (
     <button
       onClick={onChange}
+      disabled={disabled}
       className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-primary' : 'bg-secondary'
-        }`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <div
         className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? 'left-7' : 'left-1'
@@ -46,36 +50,76 @@ export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { logout } = useAuth();
 
+  // Loading and saving states
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Settings state (initialized with defaults)
+  const [settings, setSettings] = useState<Partial<UserSettings>>({
+    pushEnabled: true,
+    streakReminders: true,
+    friendActivity: true,
+    squadUpdates: true,
+    communityUpdates: true,
+    leaderboardChanges: false,
+    emailDigest: true,
+    profilePublic: true,
+    showStreak: true,
+    showScore: true,
+    allowDms: true,
+    showOnLeaderboard: true,
+    reminderTime: '09:00',
+    gracePeriodEnabled: true,
+    gracePeriodHours: 2,
+    weekendMode: false,
+  });
+
+  // Fetch settings on mount
+  useEffect(() => {
+    async function fetchSettings() {
+      setLoading(true);
+      const res = await usersApi.getSettings();
+      if (res.success && res.data) {
+        setSettings(res.data);
+      }
+      setLoading(false);
+    }
+    fetchSettings();
+  }, []);
+
+  // Update a setting
+  const updateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+    setSaveSuccess(false);
+  };
+
+  // Save settings to API
+  const handleSave = async () => {
+    setSaving(true);
+    const res = await usersApi.updateSettings(settings);
+    if (res.success) {
+      setHasChanges(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+    setSaving(false);
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    pushEnabled: true,
-    streakReminders: true,
-    friendActivity: true,
-    squadUpdates: true,
-    leaderboardChanges: false,
-    emailDigest: true,
-  });
-
-  // Privacy settings
-  const [privacy, setPrivacy] = useState({
-    profilePublic: true,
-    showStreak: true,
-    showScore: true,
-    allowDMs: true,
-    showOnLeaderboard: true,
-  });
-
-  // Streak settings
-  const [streakSettings, setStreakSettings] = useState({
-    reminderTime: '09:00',
-    gracePeriod: true,
-    weekendMode: false,
-  });
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8 max-w-3xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-8">
@@ -124,8 +168,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.pushEnabled}
-              onChange={() => setNotifications(n => ({ ...n, pushEnabled: !n.pushEnabled }))}
+              enabled={settings.pushEnabled ?? true}
+              onChange={() => updateSetting('pushEnabled', !settings.pushEnabled)}
             />
           </div>
 
@@ -138,8 +182,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.streakReminders}
-              onChange={() => setNotifications(n => ({ ...n, streakReminders: !n.streakReminders }))}
+              enabled={settings.streakReminders ?? true}
+              onChange={() => updateSetting('streakReminders', !settings.streakReminders)}
             />
           </div>
 
@@ -152,8 +196,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.friendActivity}
-              onChange={() => setNotifications(n => ({ ...n, friendActivity: !n.friendActivity }))}
+              enabled={settings.friendActivity ?? true}
+              onChange={() => updateSetting('friendActivity', !settings.friendActivity)}
             />
           </div>
 
@@ -166,8 +210,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.squadUpdates}
-              onChange={() => setNotifications(n => ({ ...n, squadUpdates: !n.squadUpdates }))}
+              enabled={settings.squadUpdates ?? true}
+              onChange={() => updateSetting('squadUpdates', !settings.squadUpdates)}
             />
           </div>
 
@@ -180,8 +224,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.leaderboardChanges}
-              onChange={() => setNotifications(n => ({ ...n, leaderboardChanges: !n.leaderboardChanges }))}
+              enabled={settings.leaderboardChanges ?? false}
+              onChange={() => updateSetting('leaderboardChanges', !settings.leaderboardChanges)}
             />
           </div>
 
@@ -194,8 +238,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Toggle
-              enabled={notifications.emailDigest}
-              onChange={() => setNotifications(n => ({ ...n, emailDigest: !n.emailDigest }))}
+              enabled={settings.emailDigest ?? true}
+              onChange={() => updateSetting('emailDigest', !settings.emailDigest)}
             />
           </div>
         </div>
@@ -218,8 +262,8 @@ export default function SettingsPage() {
             </div>
             <input
               type="time"
-              value={streakSettings.reminderTime}
-              onChange={(e) => setStreakSettings(s => ({ ...s, reminderTime: e.target.value }))}
+              value={settings.reminderTime ?? '09:00'}
+              onChange={(e) => updateSetting('reminderTime', e.target.value)}
               className="bg-secondary text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -227,11 +271,11 @@ export default function SettingsPage() {
           <div className="p-4 flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Streak Grace Period</p>
-              <p className="text-sm text-muted-foreground">Get extra 2 hours before losing your streak</p>
+              <p className="text-sm text-muted-foreground">Get extra hours before losing your streak</p>
             </div>
             <Toggle
-              enabled={streakSettings.gracePeriod}
-              onChange={() => setStreakSettings(s => ({ ...s, gracePeriod: !s.gracePeriod }))}
+              enabled={settings.gracePeriodEnabled ?? true}
+              onChange={() => updateSetting('gracePeriodEnabled', !settings.gracePeriodEnabled)}
             />
           </div>
 
@@ -241,8 +285,8 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Weekends don't count towards streak breaks</p>
             </div>
             <Toggle
-              enabled={streakSettings.weekendMode}
-              onChange={() => setStreakSettings(s => ({ ...s, weekendMode: !s.weekendMode }))}
+              enabled={settings.weekendMode ?? false}
+              onChange={() => updateSetting('weekendMode', !settings.weekendMode)}
             />
           </div>
         </div>
@@ -260,15 +304,15 @@ export default function SettingsPage() {
         <div className="divide-y divide-border">
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {privacy.profilePublic ? <Eye className="w-5 h-5 text-muted-foreground" /> : <EyeOff className="w-5 h-5 text-muted-foreground" />}
+              {settings.profilePublic ? <Eye className="w-5 h-5 text-muted-foreground" /> : <EyeOff className="w-5 h-5 text-muted-foreground" />}
               <div>
                 <p className="font-medium text-foreground">Public Profile</p>
                 <p className="text-sm text-muted-foreground">Others can view your profile</p>
               </div>
             </div>
             <Toggle
-              enabled={privacy.profilePublic}
-              onChange={() => setPrivacy(p => ({ ...p, profilePublic: !p.profilePublic }))}
+              enabled={settings.profilePublic ?? true}
+              onChange={() => updateSetting('profilePublic', !settings.profilePublic)}
             />
           </div>
 
@@ -278,8 +322,8 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Display your current streak publicly</p>
             </div>
             <Toggle
-              enabled={privacy.showStreak}
-              onChange={() => setPrivacy(p => ({ ...p, showStreak: !p.showStreak }))}
+              enabled={settings.showStreak ?? true}
+              onChange={() => updateSetting('showStreak', !settings.showStreak)}
             />
           </div>
 
@@ -289,8 +333,8 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Display your total XP publicly</p>
             </div>
             <Toggle
-              enabled={privacy.showScore}
-              onChange={() => setPrivacy(p => ({ ...p, showScore: !p.showScore }))}
+              enabled={settings.showScore ?? true}
+              onChange={() => updateSetting('showScore', !settings.showScore)}
             />
           </div>
 
@@ -300,8 +344,8 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Let others send you messages</p>
             </div>
             <Toggle
-              enabled={privacy.allowDMs}
-              onChange={() => setPrivacy(p => ({ ...p, allowDMs: !p.allowDMs }))}
+              enabled={settings.allowDms ?? true}
+              onChange={() => updateSetting('allowDms', !settings.allowDms)}
             />
           </div>
 
@@ -311,8 +355,8 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Appear in public leaderboards</p>
             </div>
             <Toggle
-              enabled={privacy.showOnLeaderboard}
-              onChange={() => setPrivacy(p => ({ ...p, showOnLeaderboard: !p.showOnLeaderboard }))}
+              enabled={settings.showOnLeaderboard ?? true}
+              onChange={() => updateSetting('showOnLeaderboard', !settings.showOnLeaderboard)}
             />
           </div>
         </div>
@@ -386,10 +430,29 @@ export default function SettingsPage() {
       </section>
 
       {/* Save Button */}
-      <div className="flex justify-end">
-        <button className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
-          <Check className="w-5 h-5" />
-          Save Changes
+      <div className="flex justify-end gap-4 items-center">
+        {saveSuccess && (
+          <span className="text-success text-sm font-medium">Settings saved successfully!</span>
+        )}
+        <button
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${hasChanges
+            ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/20'
+            : 'bg-secondary text-muted-foreground cursor-not-allowed shadow-none'
+            }`}
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5" />
+              Save Changes
+            </>
+          )}
         </button>
       </div>
     </div>

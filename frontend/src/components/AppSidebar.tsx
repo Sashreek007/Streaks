@@ -8,9 +8,11 @@ import {
   LogOut,
   Flame,
   Trophy,
-  UserPlus
+  UserPlus,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import UserSearch from './UserSearch';
 
 
 const navigation = [
@@ -50,6 +52,11 @@ export default function AppSidebar() {
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg shadow-primary/25">
             S
           </div>
+        </div>
+
+        {/* Search */}
+        <div className="mb-4 w-full px-4">
+          <UserSearch />
         </div>
 
         {/* Navigation */}
@@ -111,7 +118,32 @@ export default function AppSidebar() {
       {/* Mobile Bottom Navigation - Visible only on mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 z-50 safe-area-inset-bottom">
         <nav className="flex items-center justify-around px-2 py-2">
-          {mobileNavigation.map((item) => (
+          {mobileNavigation.slice(0, 2).map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className={`p-2 rounded-xl transition-all ${isActive ? 'bg-primary/10' : ''}`}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-medium">{item.name}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+
+          {/* Mobile Search */}
+          <UserSearch isMobile />
+
+          {mobileNavigation.slice(2).map((item) => (
             <NavLink
               key={item.name}
               to={item.href}

@@ -271,6 +271,17 @@ export const usersApi = {
       body: JSON.stringify(data),
     }),
 
+  checkUsername: (username: string) =>
+    apiRequest<{ available: boolean; reason: string | null }>(
+      `/api/users/check-username/${encodeURIComponent(username)}`
+    ),
+
+  updateUsername: (username: string) =>
+    apiRequest<User>('/api/users/username', {
+      method: 'PATCH',
+      body: JSON.stringify({ username }),
+    }),
+
   getSettings: () => apiRequest<UserSettings>('/api/users/settings'),
 
   updateSettings: (data: Partial<UserSettings>) =>
@@ -286,6 +297,18 @@ export const usersApi = {
 
   getActivity: (id: string, limit = 20) =>
     apiRequest<TaskCompletion[]>(`/api/users/${id}/activity?limit=${limit}`),
+
+  search: (query: string, limit = 20) =>
+    apiRequest<Array<{
+      id: string;
+      username: string;
+      displayName: string;
+      avatarUrl: string | null;
+      bio: string | null;
+      level: number;
+      totalXp: number | null;
+      currentStreak: number | null;
+    }>>(`/api/users/search?q=${encodeURIComponent(query)}&limit=${limit}`),
 };
 
 // Tasks API
@@ -399,6 +422,26 @@ export const messagesApi = {
     apiRequest<{ success: boolean }>(`/api/messages/${conversationId}/read`, {
       method: 'POST',
     }),
+
+  deleteMessage: (messageId: string) =>
+    apiRequest<{ message: string }>(`/api/messages/message/${messageId}`, {
+      method: 'DELETE',
+    }),
+
+  editMessage: (messageId: string, content: string) =>
+    apiRequest<Message>(`/api/messages/message/${messageId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ content }),
+    }),
+
+  replyToMessage: (messageId: string, content: string, imageUrl?: string) =>
+    apiRequest<{ message: Message; conversationId: string }>(
+      `/api/messages/reply/${messageId}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ content, imageUrl }),
+      }
+    ),
 };
 
 // Squads API
@@ -443,6 +486,29 @@ export const squadsApi = {
   regenerateInvite: (id: string) =>
     apiRequest<{ inviteCode: string }>(`/api/squads/${id}/regenerate-invite`, {
       method: 'POST',
+    }),
+
+  addMember: (squadId: string, userId: string) =>
+    apiRequest<{ user: Friend; role: string }>(`/api/squads/${squadId}/add-member`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
+
+  removeMember: (squadId: string, memberId: string) =>
+    apiRequest<{ message: string }>(`/api/squads/${squadId}/members/${memberId}`, {
+      method: 'DELETE',
+    }),
+
+  updateMemberRole: (squadId: string, memberId: string, role: 'admin' | 'member') =>
+    apiRequest<{ user: Friend; role: string }>(`/api/squads/${squadId}/members/${memberId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    }),
+
+  transferOwnership: (squadId: string, newOwnerId: string) =>
+    apiRequest<{ message: string }>(`/api/squads/${squadId}/transfer-ownership`, {
+      method: 'POST',
+      body: JSON.stringify({ newOwnerId }),
     }),
 };
 

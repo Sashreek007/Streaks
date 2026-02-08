@@ -34,6 +34,156 @@ const updateSettingsSchema = z.object({
   weekendMode: z.boolean().optional(),
 });
 
+const updateUsernameSchema = z.object({
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores'),
+});
+
+// GET /api/users/search - Search for users by username or display name
+router.get('/search', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const query = (req.query.q as string || '').trim().toLowerCase();
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    if (query.length < 2) {
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: req.user!.id } }, // Exclude current user
+          {
+            OR: [
+              { username: { contains: query, mode: 'insensitive' } },
+              { displayName: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        level: true,
+        totalXp: true,
+        currentStreak: true,
+        settings: {
+          select: {
+            profilePublic: true,
+            showStreak: true,
+            showScore: true,
+          },
+        },
+      },
+      take: limit,
+      orderBy: { totalXp: 'desc' },
+    });
+
+    // Apply privacy settings
+    const results = users.map(user => ({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      level: user.level,
+      totalXp: user.settings?.showScore !== false ? user.totalXp : null,
+      currentStreak: user.settings?.showStreak !== false ? user.currentStreak : null,
+    }));
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/users/check-username/:username - Check if username is available
+router.get('/check-username/:username', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const username = req.params.username.toLowerCase();
+
+    // Validate username format
+    if (!/^[a-z0-9_]+$/.test(username) || username.length < 3 || username.length > 30) {
+      res.json({ success: true, data: { available: false, reason: 'Invalid username format' } });
+      return;
+    }
+
+    // Check if username is taken (excluding current user)
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    const available = !existingUser || existingUser.id === req.user!.id;
+
+    res.json({
+      success: true,
+      data: {
+        available,
+        reason: available ? null : 'Username is already taken'
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/users/username - Update username (for OAuth users to set their username)
+router.patch(
+  '/username',
+  authenticate,
+  validate(updateUsernameSchema),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { username } = req.body;
+      const normalizedUsername = username.toLowerCase();
+
+      // Check if username is already taken by another user
+      const existingUser = await prisma.user.findUnique({
+        where: { username: normalizedUsername },
+      });
+
+      if (existingUser && existingUser.id !== req.user!.id) {
+        res.status(400).json({
+          success: false,
+          error: 'Username is already taken'
+        });
+        return;
+      }
+
+      // Update the username
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { username: normalizedUsername },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          displayName: updatedUser.displayName,
+          email: updatedUser.email,
+          avatarUrl: updatedUser.avatarUrl,
+          bio: updatedUser.bio,
+          level: updatedUser.level,
+          totalXp: updatedUser.totalXp,
+          currentStreak: updatedUser.currentStreak,
+          longestStreak: updatedUser.longestStreak,
+          createdAt: updatedUser.createdAt,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // GET /api/users/:id - Get user profile
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
