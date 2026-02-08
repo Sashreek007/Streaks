@@ -30,14 +30,22 @@ export default function UsernameSetupPage() {
     setIsChecking(true);
     setError(null);
 
-    const res = await usersApi.checkUsername(value);
+    try {
+      const res = await usersApi.checkUsername(value);
 
-    setIsChecking(false);
-    if (res.success && res.data) {
-      setIsAvailable(res.data.available);
-      setError(res.data.available ? null : res.data.reason);
-    } else {
-      setError('Failed to check username availability');
+      setIsChecking(false);
+      if (res.success && res.data) {
+        setIsAvailable(res.data.available);
+        setError(res.data.available ? null : res.data.reason);
+      } else {
+        setError(res.error || 'Too many requests, please try again later.');
+        setIsAvailable(null);
+      }
+    } catch (error) {
+      console.error('Username check error:', error);
+      setIsChecking(false);
+      setError('Too many requests, please try again later.');
+      setIsAvailable(null);
     }
   }, []);
 

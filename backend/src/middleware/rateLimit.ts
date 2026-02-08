@@ -4,7 +4,7 @@ import { env } from '../config/env.js';
 // General API rate limit
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.isProd ? 100 : 1000, // More lenient in dev
+  max: env.isProd ? 500 : 1000, // Increased from 100 to 500 for production
   message: {
     success: false,
     error: 'Too many requests, please try again later.',

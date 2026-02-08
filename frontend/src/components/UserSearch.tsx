@@ -36,11 +36,19 @@ export default function UserSearch({ isMobile = false }: UserSearchProps) {
 
     const timer = setTimeout(async () => {
       setLoading(true);
-      const res = await usersApi.search(query);
-      if (res.success && res.data) {
-        setResults(res.data);
+      try {
+        const res = await usersApi.search(query);
+        if (res.success && res.data) {
+          setResults(res.data);
+        } else {
+          setResults([]);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }, 300);
 
     return () => clearTimeout(timer);
